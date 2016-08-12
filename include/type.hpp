@@ -1,3 +1,4 @@
+/* created by Ghabriel Nunes <ghabriel.nunes@gmail.com> [2016] */
 #ifndef TYPE_HPP
 #define TYPE_HPP
 

@@ -1,3 +1,4 @@
+/* created by Ghabriel Nunes <ghabriel.nunes@gmail.com> [2016] */
 #include <unordered_map>
 #include "type.hpp"
 

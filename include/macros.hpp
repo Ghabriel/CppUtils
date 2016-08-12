@@ -1,3 +1,4 @@
+/* created by Ghabriel Nunes <ghabriel.nunes@gmail.com> [2016] */
 #ifndef UTILS_MACROS_HPP
 #define UTILS_MACROS_HPP
 
