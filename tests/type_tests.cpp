@@ -20,8 +20,12 @@ template<typename... T>
 class D {};
 
 int main(int, char**) {
-    // A<volatile int, B<int**, const int>> v[3];
-    // A<C, int> v;
-    D<int**, const long double, volatile unsigned short, std::reference_wrapper<bool>, std::nullptr_t> v;
-    std::cout << utils::type(v) << std::endl;
+    A<volatile int, B<int**, const int>> x[3];
+    std::cout << utils::type(x) << std::endl;
+
+    D<int**, const long double, volatile unsigned short, std::reference_wrapper<bool>, std::nullptr_t> y;
+    std::cout << utils::type(y) << std::endl;
+
+    A<B<C,D<C,C,C,C>>, D<B<C,C>,A<C,D<>>>> z;
+    std::cout << utils::type(z) << std::endl;
 }

@@ -25,4 +25,11 @@
     }\
     ECHO(x)
 
+#define DEBUG \
+    {\
+        auto line = std::to_string(__LINE__); \
+        std::string prefix = "[debug] "; \
+        ECHO(prefix + __FILE__ + ":" + line); \
+    }
+
 #endif
