@@ -25,6 +25,8 @@
     }\
     ECHO(x)
 
+#define BLANK ECHO("");
+
 #define DEBUG \
     {\
         auto line = std::to_string(__LINE__); \
