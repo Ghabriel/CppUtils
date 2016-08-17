@@ -1,9 +1,9 @@
-#include <iostream>
-// #include "bimap.hpp"
-#include "macros.hpp"
-#include "pointer_holder.hpp"
+// #include <iostream>
+// // #include "bimap.hpp"
+// #include "macros.hpp"
+// #include "pointer_holder.hpp"
 
-int main(int, char**) {
+// int main(int, char**) {
     // utils::bimap<std::size_t, std::string> bimap;
     // bimap[0] = "first";
     // bimap[1] = "second";
@@ -20,4 +20,4 @@ int main(int, char**) {
     // // TRACE(bimap["first"]);
     // TRACE(bimap["second"]);
     // // TRACE(bimap["third"]);
-}
+// }

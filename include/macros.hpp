@@ -34,4 +34,6 @@
         ECHO(prefix + __FILE__ + ":" + line); \
     }
 
+#define EXPAND(cmd) (int[]){((cmd), 0)...}
+
 #endif
