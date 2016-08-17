@@ -1,6 +1,6 @@
 /* created by Ghabriel Nunes <ghabriel.nunes@gmail.com> [2016] */
-#ifndef SUBPACK_HPP
-#define SUBPACK_HPP
+#ifndef SUBTUPLE_HPP
+#define SUBTUPLE_HPP
 
 #include <tuple>
 #include "partial_tuple.hpp"

@@ -10,12 +10,6 @@ namespace utils {
         T1 first;
         T2 second;
         operator T1() const { return first; }
-        bool operator==(const T1& rhs) const { return first == rhs; }
-        bool operator!=(const T1& rhs) const { return first != rhs; }
-        bool operator<=(const T1& rhs) const { return first <= rhs; }
-        bool operator>=(const T1& rhs) const { return first >= rhs; }
-        bool operator<(const T1& rhs) const { return first < rhs; }
-        bool operator>(const T1& rhs) const { return first > rhs; }
     };
 
     template<typename T1, typename T2>
