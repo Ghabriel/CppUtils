@@ -2,7 +2,43 @@
 #ifndef UTILS_MACROS_HPP
 #define UTILS_MACROS_HPP
 
-#define TRACE(x) std::cout << (#x) << " = " << (x) << std::endl
+#include <utility>
+
+namespace {
+    template<typename T>
+    inline std::string traceable(const T& value) { return std::to_string(value); }
+    inline std::string traceable(const char* value) { return value; }
+    inline std::string traceable(const std::string& value) { return value; }
+    inline std::string traceable(char value) { return std::string(1, value); }
+
+    template<typename T1, typename T2>
+    inline std::string traceable(const std::pair<T1, T2>& pair) {
+        return '{' + traceable(pair.first) + ", " + traceable(pair.second) + '}';
+    }
+
+    template<typename T>
+    std::string construct(const T& value) {
+        return traceable(value);
+    }
+
+    template<typename T1, typename T2, typename... Args>
+    std::string construct(const T1& value, const T2& next, Args&&... args) {
+        return traceable(value) + ", " + construct(next, args...);
+    }
+
+    template<typename... Types, size_t... I>
+    std::string extract(const std::tuple<Types...>& tuple, std::index_sequence<I...>) {
+        return construct(std::get<I>(tuple)...);
+    }
+
+    template<typename... Types>
+    inline std::string traceable(const std::tuple<Types...>& tuple) {
+        return '{' + extract(tuple, std::make_index_sequence<sizeof...(Types)>()) + '}';
+    }
+}
+
+// #define TRACE(x) std::cout << (#x) << " = " << (x) << std::endl
+#define TRACE(x) std::cout << (#x) << " = " << traceable(x) << std::endl
 #define TRACE_L(x,y) std::cout << (x) << " = " << (y) << std::endl
 #define TRACE_IT(x) \
     {\
