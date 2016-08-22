@@ -17,23 +17,31 @@ namespace {
     }
 
     template<typename T>
-    std::string construct(const T& value) {
+    inline std::string construct(const T& value) {
         return traceable(value);
     }
 
     template<typename T1, typename T2, typename... Args>
-    std::string construct(const T1& value, const T2& next, Args&&... args) {
+    inline std::string construct(const T1& value, const T2& next, Args&&... args) {
         return traceable(value) + ", " + construct(next, args...);
     }
 
     template<typename... Types, size_t... I>
-    std::string extract(const std::tuple<Types...>& tuple, std::index_sequence<I...>) {
+    inline std::string extract(const std::tuple<Types...>& tuple, std::index_sequence<I...>) {
         return construct(std::get<I>(tuple)...);
     }
 
     template<typename... Types>
     inline std::string traceable(const std::tuple<Types...>& tuple) {
         return '{' + extract(tuple, std::make_index_sequence<sizeof...(Types)>()) + '}';
+    }
+
+    inline void echo() {}
+
+    template<typename T, typename... Args>
+    inline void echo(const T& value, Args&&... args) {
+        std::cout << traceable(value) << std::endl;
+        echo(args...);
     }
 }
 
@@ -54,7 +62,7 @@ namespace {
             std::cout << (l) << "[" << std::to_string(counter++) << "] = " << elem << std::endl; \
         }\
     }
-#define ECHO(x) std::cout << (x) << std::endl
+#define ECHO(...) echo(__VA_ARGS__)
 #define ECHOI(x,numTabs) \
     for (unsigned i = 0; i < numTabs; i++) {\
         std::cout << "\t"; \

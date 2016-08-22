@@ -23,5 +23,7 @@ int main(int, char**) {
 
     std::string x = "abc";
     auto t = std::make_tuple(2, 'a', true, x, 5.2);
-    TRACE(t);
+    // TRACE(t);
+    ECHO(t);
+    ECHO(2, 'a', true, x, 5.2);
 }
