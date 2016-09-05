@@ -2,9 +2,17 @@
 #ifndef UTILS_MACROS_HPP
 #define UTILS_MACROS_HPP
 
+#include <iostream>
+#include <sstream>
 #include <utility>
 
 namespace {
+    template<typename T>
+    inline std::string traceable(T* const value) {
+        std::stringstream ss;
+        ss << static_cast<const void*>(value);
+        return ss.str();
+    }
     template<typename T>
     inline std::string traceable(const T& value) { return std::to_string(value); }
     inline std::string traceable(const char* value) { return value; }
