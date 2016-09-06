@@ -7,6 +7,12 @@
 #include <utility>
 
 namespace {
+    namespace fallback {
+        // template<typename T>
+        // inline std::ostream& 
+    }
+
+
     template<typename T>
     inline std::string traceable(T* const value) {
         std::stringstream ss;
@@ -48,13 +54,21 @@ namespace {
 
     template<typename T, typename... Args>
     inline void echo(const T& value, Args&&... args) {
-        std::cout << traceable(value) << std::endl;
+        // using namespace fallback;
+        // std::cout << traceable(value) << std::endl;
+        std::cout << value << std::endl;
         echo(args...);
+    }
+
+    template<typename T>
+    inline void trace(const std::string& name, const T& value) {
+        std::cout << name << " = ";
+        echo(value);
     }
 }
 
 // #define TRACE(x) std::cout << (#x) << " = " << (x) << std::endl
-#define TRACE(x) std::cout << (#x) << " = " << traceable(x) << std::endl
+#define TRACE(x) trace((#x), (x));
 #define TRACE_L(x,y) std::cout << (x) << " = " << (y) << std::endl
 #define TRACE_IT(x) \
     {\

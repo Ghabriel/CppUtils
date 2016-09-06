@@ -1,4 +1,5 @@
 #include <iostream>
+#include <ostream>
 #include <tuple>
 // #include "bimap.hpp"
 #include "macros.hpp"
@@ -6,6 +7,12 @@
 
 namespace test {
     class A {};
+}
+
+struct Printable {};
+
+inline std::ostream& operator<<(std::ostream& stream, const Printable& p) {
+    return stream << "printable";
 }
 
 int main(int, char**) {
@@ -26,7 +33,11 @@ int main(int, char**) {
     // TRACE(bimap["second"]);
     // // TRACE(bimap["third"]);
 
-    test::A t;
-    ECHO(utils::type(t));
-    ECHO(typeid(t).name());
+    // test::A t;
+    // ECHO(utils::type(t));
+    // ECHO(typeid(t).name());
+
+    Printable p;
+    // std::cout << p << std::endl;
+    ECHO(p);
 }
