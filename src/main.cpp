@@ -38,6 +38,11 @@ int main(int, char**) {
     // ECHO(typeid(t).name());
 
     Printable p;
-    // std::cout << p << std::endl;
-    ECHO(p);
+    TRACE(p);
+
+    std::tuple<int, char, bool> t(2, 'a', true);
+    TRACE(t);
+
+    ECHO("potato");
+    ECHO(&t);
 }

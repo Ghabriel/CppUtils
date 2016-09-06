@@ -3,16 +3,11 @@
 #define UTILS_MACROS_HPP
 
 #include <iostream>
+#include <ostream>
 #include <sstream>
 #include <utility>
 
 namespace {
-    namespace fallback {
-        // template<typename T>
-        // inline std::ostream& 
-    }
-
-
     template<typename T>
     inline std::string traceable(T* const value) {
         std::stringstream ss;
@@ -50,13 +45,56 @@ namespace {
         return '{' + extract(tuple, std::make_index_sequence<sizeof...(Types)>()) + '}';
     }
 
-    inline void echo() {}
+    // namespace fallback {
+    //     template<typename T>
+    //     inline std::ostream& operator<<(std::ostream& stream, const T& value) {
+    //         return std::operator<<(stream, traceable(value));
+    //     }
+    // }
+
+    namespace {
+        using no = char;
+        using yes = char[2];
+        no ref_no;
+        yes ref_yes;
+
+        struct any_t {
+            template<typename T>
+            any_t(const T&);
+        };
+
+        inline no operator<<(std::ostream&, const any_t&) { return ref_no; }
+        inline yes& test(std::ostream&) { return ref_yes; }
+        inline no test(no) { return ref_no; }
+
+        template<typename T>
+        struct insertion_exists {
+            static std::ostream& stream;
+            const static T& t;
+            constexpr static bool value = sizeof(test(stream << t)) == sizeof(yes);
+        };
+
+        template<typename T, bool>
+        struct fallback {
+            static void apply(std::ostream& stream, const T& value) {
+                stream << value;
+            }
+        };
+
+        template<typename T>
+        struct fallback<T, false> {
+            static void apply(std::ostream& stream, const T& value) {
+                stream << traceable(value);
+            }
+        };
+    }
+
+    inline void echo() {}        
 
     template<typename T, typename... Args>
     inline void echo(const T& value, Args&&... args) {
-        // using namespace fallback;
-        // std::cout << traceable(value) << std::endl;
-        std::cout << value << std::endl;
+        fallback<T, insertion_exists<T>::value>::apply(std::cout, value);
+        std::cout << std::endl;
         echo(args...);
     }
 
