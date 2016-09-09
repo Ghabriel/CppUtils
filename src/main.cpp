@@ -5,14 +5,20 @@
 #include "macros.hpp"
 #include "type.hpp"
 
-namespace test {
+/*namespace test {
     class A {};
-}
+}*/
 
 struct Printable {};
+struct NotPrintable {};
 
 inline std::ostream& operator<<(std::ostream& stream, const Printable& p) {
     return stream << "printable";
+}
+
+template<typename... Types>
+inline std::ostream& operator<<(std::ostream& stream, const std::tuple<Types...>& p) {
+    return stream << "tuple";
 }
 
 int main(int, char**) {
@@ -37,11 +43,15 @@ int main(int, char**) {
     // ECHO(utils::type(t));
     // ECHO(typeid(t).name());
 
+
     Printable p;
     TRACE(p);
 
     std::tuple<int, char, bool> t(2, 'a', true);
     TRACE(t);
+
+    // NotPrintable np;
+    // TRACE(np);
 
     ECHO("potato");
     ECHO(&t);
