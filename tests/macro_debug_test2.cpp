@@ -23,7 +23,7 @@ int main(int, char**) {
     TRACE(b);
     TRACE(c);
     TRACE(d);
-    // TRACE(e);
+    TRACE(e);
     TRACE(f);
     TRACE(g);
     TRACE(h);

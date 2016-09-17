@@ -3,7 +3,6 @@
 #define UTILS_MACROS_HPP
 
 #include <csignal>
-#include <functional>
 #include <iostream>
 #include <ostream>
 #include <sstream>
@@ -100,21 +99,21 @@ namespace {
     }
 
     std::pair<unsigned, std::string> debugBuffer;
+    const std::unordered_map<int, std::string> debugLabels = {
+        {SIGABRT, "Aborted"},
+        {SIGFPE, "Division by zero"},
+        {SIGILL, "SIGILL"},
+        {SIGINT, "Interruption"},
+        {SIGSEGV, "Segmentation fault"},
+        {SIGTERM, "SIGTERM"}
+    };
 
     inline void printer() {}
     inline void printer(int type) {
-        static std::unordered_map<int, std::string> labels = {
-            {SIGABRT, "Aborted"},
-            {SIGFPE, "Division by zero"},
-            {SIGILL, "SIGILL"},
-            {SIGINT, "Interruption"},
-            {SIGSEGV, "Segmentation fault"},
-            {SIGTERM, "SIGTERM"}
-        };
         auto line = std::to_string(debugBuffer.first);
         auto& filename = debugBuffer.second;
         echo("");
-        echo(labels.at(type) + " in " + filename + ":" + line);
+        echo(debugLabels.at(type) + " in " + filename + ":" + line);
         std::signal(type, SIG_DFL);
         std::raise(type);
     }
@@ -124,12 +123,9 @@ namespace {
         static bool ready = false;
         if (!ready) {
             std::atexit(printer);
-            std::signal(SIGABRT, printer);
-            std::signal(SIGFPE, printer);
-            std::signal(SIGILL, printer);
-            std::signal(SIGINT, printer);
-            std::signal(SIGSEGV, printer);
-            std::signal(SIGTERM, printer);
+            for (auto& pair : debugLabels) {
+                std::signal(pair.first, printer);
+            }
             ready = true;
         }
     }
