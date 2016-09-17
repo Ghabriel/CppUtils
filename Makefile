@@ -13,7 +13,7 @@ DEPDIR    :=.deps
 # Compiler & linker flags
 LDLIBS    :=-lm -lgtest -pthread
 LDFLAGS   :=
-CXXFLAGS  :=-std=c++14 -Wall -O3
+CXXFLAGS  :=-std=c++14 -Wall
 INCLUDE   :=-I$(HDRDIR)
 # Files
 SRC       :=$(shell find $(SRCDIR) -name '*.cpp')

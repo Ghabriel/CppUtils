@@ -2,9 +2,12 @@
 #ifndef UTILS_MACROS_HPP
 #define UTILS_MACROS_HPP
 
+#include <csignal>
+#include <functional>
 #include <iostream>
 #include <ostream>
 #include <sstream>
+#include <unordered_map>
 #include <utility>
 
 namespace {
@@ -95,6 +98,41 @@ namespace {
         std::cout << name << " = ";
         echo(value);
     }
+
+    std::pair<unsigned, std::string> debugBuffer;
+
+    inline void printer() {}
+    inline void printer(int type) {
+        static std::unordered_map<int, std::string> labels = {
+            {SIGABRT, "Aborted"},
+            {SIGFPE, "Division by zero"},
+            {SIGILL, "SIGILL"},
+            {SIGINT, "Interruption"},
+            {SIGSEGV, "Segmentation fault"},
+            {SIGTERM, "SIGTERM"}
+        };
+        auto line = std::to_string(debugBuffer.first);
+        auto& filename = debugBuffer.second;
+        echo("");
+        echo(labels.at(type) + " in " + filename + ":" + line);
+        std::signal(type, SIG_DFL);
+        std::raise(type);
+    }
+
+    inline void debug(unsigned line, const std::string& filename) {
+        debugBuffer = {line, filename};
+        static bool ready = false;
+        if (!ready) {
+            std::atexit(printer);
+            std::signal(SIGABRT, printer);
+            std::signal(SIGFPE, printer);
+            std::signal(SIGILL, printer);
+            std::signal(SIGINT, printer);
+            std::signal(SIGSEGV, printer);
+            std::signal(SIGTERM, printer);
+            ready = true;
+        }
+    }
 }
 
 #define TRACE(x) trace((#x), (x));
@@ -124,12 +162,7 @@ namespace {
 
 #define BLANK ECHO("");
 
-#define DEBUG \
-    {\
-        auto line = std::to_string(__LINE__); \
-        std::string prefix = "[debug] "; \
-        ECHO(prefix + __FILE__ + ":" + line); \
-    }
+#define DEBUG debug(__LINE__, __FILE__);
 
 #define EXPAND(cmd) (int[]){((cmd), 0)...}
 
