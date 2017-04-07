@@ -21,7 +21,6 @@ namespace {
         {SIGTERM, "SIGTERM"}
     };
 
-    inline void printer() {}
     inline void printer(int type) {
         auto line = std::to_string(debugBuffer.first);
         auto& filename = debugBuffer.second;
@@ -71,7 +70,6 @@ namespace {
             debugBuffer = {line, filename};
             static bool ready = false;
             if (!ready) {
-                std::atexit(printer);
                 for (auto& pair : debugLabels) {
                     std::signal(pair.first, printer);
                 }
