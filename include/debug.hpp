@@ -95,8 +95,6 @@ namespace {
         static void debug(size_t, const std::string&) {}
     };
 
-    inline void echo() {}        
-
     template<typename... Args>
     inline void echo(Args&&... args) {
         DebugContainer<>::echo(args...);
