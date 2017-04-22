@@ -7,9 +7,15 @@
 #include <unordered_map>
 
 namespace {
+    #ifndef ALLOW_DEBUG_USAGE
     #define ALLOW_DEBUG_USAGE 1
-    constexpr bool DEBUG_ENABLED = true;
+    #endif
+
+    #ifndef DEBUG_ENABLED
+    #define DEBUG_ENABLED 1
+    #endif
     // constexpr bool ALLOW_DEBUG_USAGE = true;
+    // constexpr bool DEBUG_ENABLED = true;
 
     std::pair<size_t, std::string> debugBuffer;
     const std::unordered_map<int, std::string> debugLabels = {
