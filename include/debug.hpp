@@ -6,14 +6,15 @@
 #include <iostream>
 #include <unordered_map>
 
-namespace {
-    #ifndef ALLOW_DEBUG_USAGE
-    #define ALLOW_DEBUG_USAGE 1
-    #endif
+#ifndef ALLOW_DEBUG_USAGE
+#define ALLOW_DEBUG_USAGE 1
+#endif
 
-    #ifndef DEBUG_ENABLED
-    #define DEBUG_ENABLED 1
-    #endif
+#ifndef DEBUG_ENABLED
+#define DEBUG_ENABLED 1
+#endif
+
+namespace detail {
     // constexpr bool ALLOW_DEBUG_USAGE = true;
     // constexpr bool DEBUG_ENABLED = true;
 
@@ -100,30 +101,30 @@ namespace {
 
         static void debug(size_t, const std::string&) {}
     };
+}
 
-    template<typename... Args>
-    inline void echo(Args&&... args) {
-        DebugContainer<>::echo(args...);
-    }
+template<typename... Args>
+inline void echo(Args&&... args) {
+    detail::DebugContainer<>::echo(args...);
+}
 
-    template<typename T>
-    inline void echoIndented(const T& value, size_t numTabs) {
-        DebugContainer<>::echoIndented(value, numTabs);
-    }
+template<typename T>
+inline void echoIndented(const T& value, size_t numTabs) {
+    detail::DebugContainer<>::echoIndented(value, numTabs);
+}
 
-    template<typename T>
-    inline void trace(const std::string& name, const T& value) {
-        DebugContainer<>::trace(name, value);
-    }
+template<typename T>
+inline void trace(const std::string& name, const T& value) {
+    detail::DebugContainer<>::trace(name, value);
+}
 
-    template<typename T>
-    inline void traceIterable(const std::string& name, const T& value) {
-        DebugContainer<>::traceIterable(name, value);
-    }
+template<typename T>
+inline void traceIterable(const std::string& name, const T& value) {
+    detail::DebugContainer<>::traceIterable(name, value);
+}
 
-    inline void debug(size_t line, const std::string& filename) {
-        DebugContainer<>::debug(line, filename);
-    }
+inline void debug(size_t line, const std::string& filename) {
+    detail::DebugContainer<>::debug(line, filename);
 }
 
 #if ALLOW_DEBUG_USAGE == 1
@@ -139,11 +140,11 @@ namespace {
 
 #else
 
+#define ECHO(...) {int debug_usage;}
+#define ECHOI(x,n) {int debug_usage;}
 #define TRACE(x) {int debug_usage;}
 #define TRACE_L(x,y) {int debug_usage;}
 #define TRACE_IT(x) {int debug_usage;}
-#define ECHO(...) {int debug_usage;}
-#define ECHOI(x,n) {int debug_usage;}
 #define BLANK {int debug_usage;}
 #define DEBUG {int debug_usage;}
 
