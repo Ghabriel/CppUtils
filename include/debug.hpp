@@ -146,6 +146,12 @@ inline void debug(size_t line, const std::string& filename) {
 #define BLANK ECHO("");
 #define DEBUG debug(__LINE__, __FILE__);
 
+#if DEBUG_ENABLED == 1
+    #define DEBUG_EXEC(...) __VA_ARGS__
+#else
+    #define DEBUG_EXEC(...) ;
+#endif
+
 #else
 
 #define ECHO(...) {int debug_usage;}
@@ -156,6 +162,7 @@ inline void debug(size_t line, const std::string& filename) {
 #define TRACE_ITL(x) {int debug_usage;}
 #define BLANK {int debug_usage;}
 #define DEBUG {int debug_usage;}
+#define DEBUG_EXEC(...) {int debug_usage;}
 
 #endif
 
