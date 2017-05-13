@@ -1,5 +1,5 @@
 /* created by Ghabriel Nunes <ghabriel.nunes@gmail.com> [2017] */
-#include "../include/debug.hpp"
+#include "debug.hpp"
 
 /*
  * A basic example of the DEBUG macro. The output of this program will be:

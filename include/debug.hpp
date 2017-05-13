@@ -15,10 +15,9 @@
 #define DEBUG_ENABLED 1
 #endif
 
-namespace detail {
-    // constexpr bool ALLOW_DEBUG_USAGE = true;
-    // constexpr bool DEBUG_ENABLED = true;
+#if ALLOW_DEBUG_USAGE == 1
 
+namespace detail {
     std::pair<size_t, std::string> debugBuffer;
     const std::unordered_map<int, std::string> debugLabels = {
         {SIGABRT, "Aborted"},
@@ -136,8 +135,6 @@ inline void debug(size_t line, const std::string& filename) {
     detail::DebugContainer<>::debug(line, filename);
 }
 
-#if ALLOW_DEBUG_USAGE == 1
-
 #define FIRST_NAME(v, ...) (#v)
 
 #define ECHO(...) echo(__VA_ARGS__)
@@ -152,10 +149,11 @@ inline void debug(size_t line, const std::string& filename) {
 #else
 
 #define ECHO(...) {int debug_usage;}
-#define ECHOI(x,n) {int debug_usage;}
-#define TRACE(x) {int debug_usage;}
-#define TRACE_L(x,y) {int debug_usage;}
+#define ECHOI(numTabs,...) {int debug_usage;}
+#define TRACE(...) {int debug_usage;}
+#define TRACE_L(x,...) {int debug_usage;}
 #define TRACE_IT(x) {int debug_usage;}
+#define TRACE_ITL(x) {int debug_usage;}
 #define BLANK {int debug_usage;}
 #define DEBUG {int debug_usage;}
 
