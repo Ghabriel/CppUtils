@@ -3,18 +3,16 @@
 #include <vector>
 #include "debug.hpp"
 
-int main(int, char**) {
-	// std::unordered_map<char, long> m = {
-	// 	{'R', 1},
-	// 	{'G', 2},
-	// 	{'B', 3}
-	// };
-	// TRACE_MAP(m);
-	// BLANK;
+struct Custom {
+	std::string operator()(char c) const {
+		return "[char #" + std::to_string(c) + "]";
+	}
+};
 
-	// std::pair<long, std::string> p = {2, "Hello, world!"};
-	// TRACE_PAIR(p);
-	// BLANK;
+int main(int, char**) {
+	char k = 'A';
+	TRACE(k);
+	TRACE(k, Custom());
 
 	std::vector<int> v = {42, 30, 7};
 	TRACE_IT(v);

@@ -5,6 +5,7 @@
 #include <csignal>
 #include <iostream>
 #include <unordered_map>
+#include <utility>
 
 #ifndef ALLOW_DEBUG_USAGE
 #define ALLOW_DEBUG_USAGE 1
@@ -64,6 +65,11 @@ namespace detail {
             echo(value);
         }
 
+        template<typename T, typename F>
+        static void trace(const std::string& name, const T& value, const F& formatter) {
+            std::cout << name << " = " << formatter(value) << std::endl;
+        }
+
         template<typename T>
         static void traceIterable(const std::string& name, const T& value) {
             unsigned long long counter = 0;
@@ -93,8 +99,8 @@ namespace detail {
         template<typename T>
         static void echoIndented(const T&, size_t) {}
 
-        template<typename T>
-        static void trace(const std::string&, const T&) {}
+        template<typename... Args>
+        static void trace(Args&&...) {}
 
         template<typename T>
         static void traceIterable(const std::string&, const T&) {}
@@ -105,7 +111,7 @@ namespace detail {
 
 template<typename... Args>
 inline void echo(Args&&... args) {
-    detail::DebugContainer<>::echo(args...);
+    detail::DebugContainer<>::echo(std::forward<Args>(args)...);
 }
 
 template<typename T>
@@ -113,9 +119,9 @@ inline void echoIndented(const T& value, size_t numTabs) {
     detail::DebugContainer<>::echoIndented(value, numTabs);
 }
 
-template<typename T>
-inline void trace(const std::string& name, const T& value) {
-    detail::DebugContainer<>::trace(name, value);
+template<typename... Args>
+inline void trace(Args&&... args) {
+    detail::DebugContainer<>::trace(std::forward<Args>(args)...);
 }
 
 template<typename T>
@@ -129,9 +135,11 @@ inline void debug(size_t line, const std::string& filename) {
 
 #if ALLOW_DEBUG_USAGE == 1
 
+#define FIRST_NAME(v, ...) (#v)
+
 #define ECHO(...) echo(__VA_ARGS__)
 #define ECHOI(x,numTabs) echoIndented((x),(numTabs))
-#define TRACE(x) trace((#x), (x));
+#define TRACE(...) trace(FIRST_NAME(__VA_ARGS__), __VA_ARGS__)
 #define TRACE_L(x,y) trace((x), (y))
 #define TRACE_IT(x) traceIterable((#x), (x))
 #define TRACE_ITL(x) traceIterable((l), (x))
