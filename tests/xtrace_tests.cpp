@@ -1,6 +1,12 @@
 /* created by Ghabriel Nunes <ghabriel.nunes@gmail.com> [2017] */
+#include <deque>
+#include <list>
+#include <unordered_map>
+#include <vector>
 #include "debug.hpp"
 #include "xtrace.hpp"
+
+class A {};
 
 int main(int, char**) {
 	char a = 'A';
@@ -27,4 +33,38 @@ int main(int, char**) {
 
 	std::reference_wrapper<decltype(g)> h = g;
 	XTRACE(h);
+
+	std::array<int, 4> i = {1, 2, 3, 4};
+	XTRACE(i);
+
+	std::deque<int> j = {1, 2, 3};
+	XTRACE(j);
+
+	std::list<int> k = {42, 42};
+	XTRACE(k);
+
+	std::map<char, unsigned> l = {
+		{'R', 0},
+		{'G', 128},
+		{'B', 256}
+	};
+	XTRACE(l);
+
+	std::unordered_map<char, unsigned> m = {
+		{'R', 0},
+		{'G', 128},
+		{'B', 256}
+	};
+	XTRACE(m);
+
+	std::vector<std::unique_ptr<int>> n;
+	n.emplace_back(new int(10));
+	n.emplace_back(new int(15));
+	XTRACE(n);
+
+	A o;
+	XTRACE(o);
+
+	void* p = &b;
+	XTRACE(p);
 }

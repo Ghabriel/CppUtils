@@ -3,18 +3,44 @@
 #define UTILS_XTRACE_HPP
 
 #include <functional>
+#include <map>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <typeinfo>
 #include <type_traits>
-#include <vector>
+#include <unordered_map>
 
 #if ALLOW_DEBUG_USAGE == 1
 
 namespace detail {
     template<int P> struct priority : public priority<P-1> {};
     template<> struct priority<0> {};
+
+    template<typename T>
+    struct it_underlying_type {
+        using type = decltype(*std::declval<T>().begin());
+    };
+
+    template<typename T1, typename T2>
+    struct is_same_decay {
+        static constexpr bool value = std::is_same<
+            typename std::decay<T1>::type,
+            typename std::decay<T2>::type
+        >::value;
+    };
+
+    template<typename Container>
+    struct is_linear_container {
+        static constexpr bool value = is_same_decay<
+            typename it_underlying_type<Container>::type,
+            decltype(*is_linear_container::first_template(Container{}))
+        >::value;
+
+     private:
+        template<template<typename...> typename C, typename T, typename... Ts>
+        static T* first_template(const C<T, Ts...>&);
+    };
 
     class XTraceFormatter {
      public:
@@ -27,6 +53,7 @@ namespace detail {
         std::string operator()(char) const;
         std::string operator()(const char*) const;
         std::string operator()(const std::string&) const;
+        std::string operator()(void*) const;
         template<typename T>
         std::string operator()(T* const) const;
         template<typename T>
@@ -37,30 +64,47 @@ namespace detail {
         std::string operator()(const std::reference_wrapper<T>&) const;
         template<typename T>
         std::string operator()(const T&) const;
-        template<typename T>
-        std::string operator()(const std::vector<T>& vector) const;
         template<typename T1, typename T2>
         std::string operator()(const std::pair<T1, T2>& pair) const;
         template<typename... Types>
         std::string operator()(const std::tuple<Types...>& tuple) const;
+        template<typename T, size_t N>
+        std::string operator()(const std::array<T,N>& c) const {
+            return formatContainer(c);
+        }
+        template<typename K, typename V>
+        std::string operator()(const std::map<K,V>& c) const {
+            return formatContainer(c);
+        }
+        template<typename K, typename V>
+        std::string operator()(const std::unordered_map<K,V>& c) const {
+            return formatContainer(c);
+        }
 
      private:
         XTraceFormatter() = default;
 
         template<typename T,
             typename = typename std::enable_if<std::is_arithmetic<T>::value>::type>
-        std::string generic(const T& value, priority<1>) const {
+        std::string operator()(const T& value, priority<2>) const {
             return std::to_string(value);
         }
 
+        template<template<typename...> typename C, typename... Ts,
+            typename = typename std::enable_if<is_linear_container<C<Ts...>>::value>::type>
+        std::string operator()(const C<Ts...>& value, priority<1>) const {
+            return formatContainer(value);
+        }
+
         template<typename T>
-        std::string generic(const T& value, priority<0>) const {
+        std::string operator()(const T& value, priority<0>) const {
             std::stringstream ss;
-            ss << "UNPRINTABLE (typeid: ";
-            ss << typeid(value).name();
-            ss << ")";
+            ss << "UNPRINTABLE (typeid: " << typeid(value).name() << ")";
             return ss.str();
         }
+
+        template<typename T>
+        std::string formatContainer(const T&) const;
 
         template<typename T>
         std::string construct(const T&) const;
@@ -72,11 +116,17 @@ namespace detail {
         std::string extract(const std::tuple<Types...>&, std::index_sequence<I...>) const;
     };
 
+    inline std::string XTraceFormatter::operator()(void* value) const {
+        std::stringstream ss;
+        ss << static_cast<void*>(value);
+        return ss.str();
+    }
+
     template<typename T>
     inline std::string XTraceFormatter::operator()(T* const value) const {
         std::stringstream ss;
-        ss << static_cast<void*>(value);
-        return ss.str() + ", points to: " + (*this)(*value);
+        ss << static_cast<void*>(value) << " -> " << (*this)(*value);
+        return ss.str();
     }
 
     template<typename T>
@@ -114,23 +164,7 @@ namespace detail {
 
     template<typename T>
     inline std::string XTraceFormatter::operator()(const T& value) const {
-        return generic(value, priority<1>{});
-    }
-
-    template<typename T>
-    inline std::string XTraceFormatter::operator()(const std::vector<T>& vector) const {
-        std::stringstream ss;
-        ss << "{";
-        bool first = true;
-        for (auto& value : vector) {
-            if (!first) {
-                ss << ", ";
-            }
-            ss << (*this)(value);
-            first = false;
-        }
-        ss << "}";
-        return ss.str();
+        return (*this)(value, priority<2>{});
     }
 
     template<typename T1, typename T2>
@@ -143,6 +177,22 @@ namespace detail {
         return '{' +
                 extract(tuple, std::make_index_sequence<sizeof...(Types)>())
                 + '}';
+    }
+
+    template<typename T>
+    inline std::string XTraceFormatter::formatContainer(const T& container) const {
+        std::stringstream ss;
+        ss << '{';
+        bool first = true;
+        for (auto& value : container) {
+            if (!first) {
+                ss << ", ";
+            }
+            ss << (*this)(value);
+            first = false;
+        }
+        ss << '}';
+        return ss.str();
     }
 
     template<typename T>
