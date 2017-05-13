@@ -48,15 +48,18 @@ namespace detail {
         template<typename T, typename... Args>
         static void echo(const T& value, Args&&... args) {
             std::cout << value << std::endl;
-            echo(args...);
+            echo(std::forward<Args>(args)...);
         }
 
-        template<typename T>
-        static void echoIndented(const T& value, size_t numTabs) {
+        static void echoIndented(size_t) {}
+
+        template<typename T, typename... Args>
+        static void echoIndented(size_t numTabs, const T& value, Args&&... args) {
             for (size_t i = 0; i < numTabs; i++) {
                 std::cout << "\t";
             }
             echo(value);
+            echoIndented(numTabs, std::forward<Args>(args)...);
         }
 
         template<typename T>
@@ -96,8 +99,8 @@ namespace detail {
         template<typename... Args>
         static void echo(Args&&...) {}
 
-        template<typename T>
-        static void echoIndented(const T&, size_t) {}
+        template<typename... Args>
+        static void echoIndented(Args&&...) {}
 
         template<typename... Args>
         static void trace(Args&&...) {}
@@ -114,9 +117,9 @@ inline void echo(Args&&... args) {
     detail::DebugContainer<>::echo(std::forward<Args>(args)...);
 }
 
-template<typename T>
-inline void echoIndented(const T& value, size_t numTabs) {
-    detail::DebugContainer<>::echoIndented(value, numTabs);
+template<typename... Args>
+inline void echoIndented(size_t numTabs, Args&&... args) {
+    detail::DebugContainer<>::echoIndented(numTabs, std::forward<Args>(args)...);
 }
 
 template<typename... Args>
@@ -138,9 +141,9 @@ inline void debug(size_t line, const std::string& filename) {
 #define FIRST_NAME(v, ...) (#v)
 
 #define ECHO(...) echo(__VA_ARGS__)
-#define ECHOI(x,numTabs) echoIndented((x),(numTabs))
+#define ECHOI(numTabs,...) echoIndented((numTabs), __VA_ARGS__)
 #define TRACE(...) trace(FIRST_NAME(__VA_ARGS__), __VA_ARGS__)
-#define TRACE_L(x,y) trace((x), (y))
+#define TRACE_L(x,...) trace((x), __VA_ARGS__)
 #define TRACE_IT(x) traceIterable((#x), (x))
 #define TRACE_ITL(x) traceIterable((l), (x))
 #define BLANK ECHO("");

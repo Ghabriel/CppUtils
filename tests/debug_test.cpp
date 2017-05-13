@@ -1,4 +1,4 @@
-#include <typeinfo>
+/* created by Ghabriel Nunes <ghabriel.nunes@gmail.com> [2017] */
 #include <unordered_map>
 #include <vector>
 #include "debug.hpp"
@@ -13,6 +13,7 @@ int main(int, char**) {
 	char k = 'A';
 	TRACE(k);
 	TRACE(k, Custom());
+	TRACE_L("potato", k, Custom());
 
 	std::vector<int> v = {42, 30, 7};
 	TRACE_IT(v);
