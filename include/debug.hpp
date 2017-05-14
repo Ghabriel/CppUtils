@@ -5,6 +5,7 @@
 #include <csignal>
 #include <functional>
 #include <iostream>
+#include <sstream>
 #include <unordered_map>
 #include <utility>
 
@@ -18,159 +19,216 @@
 
 #if ALLOW_DEBUG_USAGE == 1
 
-namespace detail {
-    std::pair<size_t, std::string> debugBuffer;
-    const std::unordered_map<int, std::string> debugLabels = {
-        {SIGABRT, "Aborted"},
-        {SIGFPE, "Division by zero"},
-        {SIGILL, "SIGILL"},
-        {SIGINT, "Interruption"},
-        {SIGSEGV, "Segmentation fault"},
-        {SIGTERM, "SIGTERM"}
+namespace dbg {
+    class ArbitraryStream {
+     public:
+        virtual ArbitraryStream& operator<<(const std::string&) = 0;
     };
 
-    inline void printer(int type) {
-        auto line = std::to_string(debugBuffer.first);
-        auto& filename = debugBuffer.second;
-        std::cout << debugLabels.at(type) << " in " << filename
-                  << ":" << line << std::endl;
-        std::signal(type, SIG_DFL);
-        std::raise(type);
-    }
+    template<typename... Args>
+    void echo(Args&&...);
 
-    using StreamType = decltype(std::cout);
+    namespace detail {
+        std::pair<size_t, std::string> debugBuffer;
+        const std::unordered_map<int, std::string> debugLabels = {
+            {SIGABRT, "Aborted"},
+            {SIGFPE, "Division by zero"},
+            {SIGILL, "SIGILL"},
+            {SIGINT, "Interruption"},
+            {SIGSEGV, "Segmentation fault"},
+            {SIGTERM, "SIGTERM"}
+        };
 
-    struct StreamContainer {
-        static std::reference_wrapper<StreamType> stream;
-    };
-    decltype(StreamContainer::stream) StreamContainer::stream = std::cout;
-
-    inline StreamType& stream() {
-        return StreamContainer::stream.get();
-    }
-
-    template<bool = DEBUG_ENABLED>
-    struct DebugContainer;
-
-    template<>
-    struct DebugContainer<true> {
-        static void echo() {}
-
-        template<typename T, typename... Args>
-        static void echo(const T& value, Args&&... args) {
-            stream() << value << '\n';
-            echo(std::forward<Args>(args)...);
+        inline void printer(int type) {
+            auto line = std::to_string(debugBuffer.first);
+            auto& filename = debugBuffer.second;
+            std::stringstream ss;
+            ss << debugLabels.at(type) << " in " << filename
+               << ":" << line;
+            echo(ss.str());
+            std::signal(type, SIG_DFL);
+            std::raise(type);
         }
 
-        static void echoIndented(size_t) {}
 
-        template<typename T, typename... Args>
-        static void echoIndented(size_t numTabs, const T& value, Args&&... args) {
-            for (size_t i = 0; i < numTabs; i++) {
-                stream() << "\t";
+        using StreamType = decltype(std::cout);
+
+        class StreamContainer : public ArbitraryStream {
+         public:
+            static StreamContainer& instance() {
+                static StreamContainer inst;
+                return inst;
             }
-            echo(value);
-            echoIndented(numTabs, std::forward<Args>(args)...);
-        }
 
-        template<typename T>
-        static void trace(const std::string& name, const T& value) {
-            stream() << name << " = ";
-            echo(value);
-        }
-
-        template<typename T, typename F>
-        static void trace(const std::string& name, const T& value, const F& formatter) {
-            stream() << name << " = " << formatter(value) << '\n';
-        }
-
-        template<typename T>
-        static void traceIterable(const std::string& name, const T& value) {
-            unsigned long long counter = 0;
-            for (auto& elem : value) {
-                stream() << name << "[" << std::to_string(counter++) << "] = ";
-                echo(elem);
+            StreamContainer& operator<<(const std::string& message) {
+                stream.get() << message;
+                return *this;
             }
+
+            void setStream(StreamType& newStream) {
+                stream = newStream;
+            }
+
+         private:
+            StreamContainer() = default;
+
+            std::reference_wrapper<StreamType> stream = std::cout;
+        };
+
+
+        struct Container {
+            static std::reference_wrapper<ArbitraryStream> activeStream;
+        };
+        decltype(Container::activeStream) Container::activeStream = StreamContainer::instance();
+
+
+        inline ArbitraryStream& stream() {
+            return Container::activeStream;
         }
 
-        static void debug(size_t line, const std::string& filename) {
-            debugBuffer = {line, filename};
-            static bool ready = false;
-            if (!ready) {
-                for (auto& pair : debugLabels) {
-                    std::signal(pair.first, printer);
+        template<bool = DEBUG_ENABLED>
+        struct DebugContainer;
+
+        template<>
+        struct DebugContainer<true> {
+            static void echo() {}
+
+            template<typename T, typename... Args>
+            static void echo(const T& value, Args&&... args) {
+                std::stringstream ss;
+                ss << value << '\n';
+                stream() << ss.str();
+                echo(std::forward<Args>(args)...);
+            }
+
+            template<typename... Args>
+            static void echo(const std::string& value, Args&&... args) {
+                stream() << (value + '\n');
+                echo(std::forward<Args>(args)...);
+            }
+
+            static void echoIndented(size_t) {}
+
+            template<typename T, typename... Args>
+            static void echoIndented(size_t numTabs, const T& value, Args&&... args) {
+                std::stringstream ss;
+                for (size_t i = 0; i < numTabs; i++) {
+                    ss << "\t";
                 }
-                ready = true;
+                ss << value;
+                echo(ss.str());
+                echoIndented(numTabs, std::forward<Args>(args)...);
             }
-        }
 
-        template<typename T>
-        static void debugRedirect(T& stream) {
-            StreamContainer::stream = stream;
-        }
-    };
+            template<typename T>
+            static void trace(const std::string& name, const T& value) {
+                std::stringstream ss;
+                ss << name << " = " << value;
+                echo(ss.str());
+            }
 
-    template<>
-    struct DebugContainer<false> {
-        template<typename... Args>
-        static void echo(Args&&...) {}
+            static void trace(const std::string& name, const std::string& value) {
+                echo(name + " = " + value);
+            }
 
-        template<typename... Args>
-        static void echoIndented(Args&&...) {}
+            template<typename T, typename F>
+            static void trace(const std::string& name, const T& value, const F& formatter) {
+                trace(name, formatter(value));
+            }
 
-        template<typename... Args>
-        static void trace(Args&&...) {}
+            template<typename T>
+            static void traceIterable(const std::string& name, const T& value) {
+                unsigned long long counter = 0;
+                for (auto& elem : value) {
+                    stream() << name << "[" << std::to_string(counter++) << "] = ";
+                    echo(elem);
+                }
+            }
 
-        template<typename T>
-        static void traceIterable(const std::string&, const T&) {}
+            static void debug(size_t line, const std::string& filename) {
+                debugBuffer = {line, filename};
+                static bool ready = false;
+                if (!ready) {
+                    for (auto& pair : debugLabels) {
+                        std::signal(pair.first, printer);
+                    }
+                    ready = true;
+                }
+            }
 
-        static void debug(size_t, const std::string&) {}
+            static void debugRedirect(StreamType& stream) {
+                static auto& streamContainer = StreamContainer::instance();
+                Container::activeStream = streamContainer;
+                streamContainer.setStream(stream);
+            }
 
-        template<typename T>
-        static void debugRedirect(const T&) {}
-    };
-}
+            static void debugRedirect(ArbitraryStream& stream) {
+                Container::activeStream = stream;
+            }
+        };
 
-template<typename... Args>
-inline void echo(Args&&... args) {
-    detail::DebugContainer<>::echo(std::forward<Args>(args)...);
-}
+        template<>
+        struct DebugContainer<false> {
+            template<typename... Args>
+            static void echo(Args&&...) {}
 
-template<typename... Args>
-inline void echoIndented(size_t numTabs, Args&&... args) {
-    detail::DebugContainer<>::echoIndented(numTabs, std::forward<Args>(args)...);
-}
+            template<typename... Args>
+            static void echoIndented(Args&&...) {}
 
-template<typename... Args>
-inline void trace(Args&&... args) {
-    detail::DebugContainer<>::trace(std::forward<Args>(args)...);
-}
+            template<typename... Args>
+            static void trace(Args&&...) {}
 
-template<typename T>
-inline void traceIterable(const std::string& name, const T& value) {
-    detail::DebugContainer<>::traceIterable(name, value);
-}
+            template<typename T>
+            static void traceIterable(const std::string&, const T&) {}
 
-inline void debug(size_t line, const std::string& filename) {
-    detail::DebugContainer<>::debug(line, filename);
-}
+            static void debug(size_t, const std::string&) {}
 
-template<typename T>
-inline void debugRedirect(T& stream) {
-    detail::DebugContainer<>::debugRedirect(stream);
+            template<typename T>
+            static void debugRedirect(const T&) {}
+        };
+    }
+
+    template<typename... Args>
+    inline void echo(Args&&... args) {
+        detail::DebugContainer<>::echo(std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    inline void echoIndented(size_t numTabs, Args&&... args) {
+        detail::DebugContainer<>::echoIndented(numTabs, std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    inline void trace(Args&&... args) {
+        detail::DebugContainer<>::trace(std::forward<Args>(args)...);
+    }
+
+    template<typename T>
+    inline void traceIterable(const std::string& name, const T& value) {
+        detail::DebugContainer<>::traceIterable(name, value);
+    }
+
+    inline void debug(size_t line, const std::string& filename) {
+        detail::DebugContainer<>::debug(line, filename);
+    }
+
+    template<typename T>
+    inline void debugRedirect(T& stream) {
+        detail::DebugContainer<>::debugRedirect(stream);
+    }
 }
 
 #define FIRST_NAME(v, ...) (#v)
 
-#define ECHO(...) echo(__VA_ARGS__)
-#define ECHOI(numTabs,...) echoIndented((numTabs), __VA_ARGS__)
-#define TRACE(...) trace(FIRST_NAME(__VA_ARGS__), __VA_ARGS__)
-#define TRACE_L(x,...) trace((x), __VA_ARGS__)
-#define TRACE_IT(x) traceIterable((#x), (x))
-#define TRACE_ITL(x) traceIterable((l), (x))
+#define ECHO(...) dbg::echo(__VA_ARGS__)
+#define ECHOI(numTabs,...) dbg::echoIndented((numTabs), __VA_ARGS__)
+#define TRACE(...) dbg::trace(FIRST_NAME(__VA_ARGS__), __VA_ARGS__)
+#define TRACE_L(x,...) dbg::trace((x), __VA_ARGS__)
+#define TRACE_IT(x) dbg::traceIterable((#x), (x))
+#define TRACE_ITL(x) dbg::traceIterable((l), (x))
 #define BLANK ECHO("");
-#define DEBUG debug(__LINE__, __FILE__);
-#define DEBUG_REDIRECT(stream) debugRedirect(stream)
+#define DEBUG dbg::debug(__LINE__, __FILE__);
+#define DEBUG_REDIRECT(stream) dbg::debugRedirect(stream)
 
 #if DEBUG_ENABLED == 1
     #define DEBUG_EXEC(...) __VA_ARGS__

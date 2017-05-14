@@ -2,6 +2,7 @@
 #include <fstream>
 #include <vector>
 #include "debug.hpp"
+
 int main(int, char**) {
     auto stream = std::ofstream("dump.txt");
     DEBUG_REDIRECT(stream);

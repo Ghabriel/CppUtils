@@ -234,7 +234,7 @@ namespace detail {
     const auto xTraceFormatter = XTraceFormatter::instance();
 }
 
-#define XTRACE(x) trace((#x), (x), detail::xTraceFormatter)
+#define XTRACE(x) dbg::trace((#x), (x), detail::xTraceFormatter)
 
 #else
 
