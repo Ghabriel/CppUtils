@@ -20,11 +20,6 @@
 #if ALLOW_DEBUG_USAGE == 1
 
 namespace dbg {
-    class ArbitraryStream {
-     public:
-        virtual ArbitraryStream& operator<<(const std::string&) = 0;
-    };
-
     template<typename... Args>
     void echo(Args&&...);
 
@@ -50,40 +45,34 @@ namespace dbg {
             std::raise(type);
         }
 
-
+        using Redirector = std::function<void(const std::string&)>;
         using StreamType = decltype(std::cout);
 
-        class StreamContainer : public ArbitraryStream {
-         public:
+        struct StreamContainer {
             static StreamContainer& instance() {
                 static StreamContainer inst;
                 return inst;
             }
 
             StreamContainer& operator<<(const std::string& message) {
-                stream.get() << message;
+                redirector(message);
                 return *this;
             }
 
-            void setStream(StreamType& newStream) {
-                stream = newStream;
-            }
+            Redirector redirector = [](const std::string& message) {
+                StreamContainer::instance().stream.get() << message;
+            };
+
+            std::reference_wrapper<StreamType> stream = std::cout;
 
          private:
             StreamContainer() = default;
-
-            std::reference_wrapper<StreamType> stream = std::cout;
         };
 
+        const auto defaultRedirector = StreamContainer::instance().redirector;
 
-        struct Container {
-            static std::reference_wrapper<ArbitraryStream> activeStream;
-        };
-        decltype(Container::activeStream) Container::activeStream = StreamContainer::instance();
-
-
-        inline ArbitraryStream& stream() {
-            return Container::activeStream;
+        inline StreamContainer& stream() {
+            return StreamContainer::instance();
         }
 
         template<bool = DEBUG_ENABLED>
@@ -158,12 +147,12 @@ namespace dbg {
 
             static void debugRedirect(StreamType& stream) {
                 static auto& streamContainer = StreamContainer::instance();
-                Container::activeStream = streamContainer;
-                streamContainer.setStream(stream);
+                streamContainer.redirector = defaultRedirector;
+                streamContainer.stream = stream;
             }
 
-            static void debugRedirect(ArbitraryStream& stream) {
-                Container::activeStream = stream;
+            static void debugRedirect(const Redirector& redirector) {
+                StreamContainer::instance().redirector = redirector;
             }
         };
 
@@ -214,6 +203,11 @@ namespace dbg {
 
     template<typename T>
     inline void debugRedirect(T& stream) {
+        detail::DebugContainer<>::debugRedirect(stream);
+    }
+
+    template<typename T>
+    inline void debugRedirect(const T& stream) {
         detail::DebugContainer<>::debugRedirect(stream);
     }
 }

@@ -2,7 +2,8 @@
 #include <vector>
 #include "debug.hpp"
 
-class Redirect : public dbg::ArbitraryStream {
+class Redirect {
+ public:
     Redirect& operator<<(const std::string& message) {
         std::cout << "[LOG] " << message;
         return *this;
@@ -11,7 +12,9 @@ class Redirect : public dbg::ArbitraryStream {
 
 int main(int, char**) {
     Redirect redirector;
-    DEBUG_REDIRECT(redirector);
+    DEBUG_REDIRECT([&](const std::string& message) {
+        redirector << message;
+    });
 
     char k = 'A';
     TRACE_L("label", k);
