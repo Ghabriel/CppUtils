@@ -19,7 +19,13 @@ namespace detail {
 
     template<typename T>
     struct it_underlying_type {
-        using type = decltype(*std::declval<T>().begin());
+     private:
+        template<typename C, typename V = decltype(*std::declval<C>().begin())>
+        static V test(const C&);
+        static void test(...);
+
+     public:
+        using type = decltype(it_underlying_type::test(T{}));
     };
 
     template<typename T1, typename T2>
@@ -38,8 +44,16 @@ namespace detail {
         >::value;
 
      private:
+        template<template<typename...> typename C, typename T, typename... Ts,
+            typename = typename std::enable_if<std::is_void<T>::value>::type>
+        static std::nullptr_t* first_template(const C<T, Ts...>&, priority<1>);
+
         template<template<typename...> typename C, typename T, typename... Ts>
-        static T* first_template(const C<T, Ts...>&);
+        static T* first_template(const C<T, Ts...>&, priority<0>);
+
+        template<template<typename...> typename C, typename T, typename... Ts>
+        static decltype(first_template(C<T, Ts...>{}, priority<1>{}))
+            first_template(const C<T, Ts...>&);
     };
 
     class XTraceFormatter {

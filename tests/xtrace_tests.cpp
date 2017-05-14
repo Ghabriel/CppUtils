@@ -8,6 +8,9 @@
 
 class A {};
 
+template<typename T>
+class B {};
+
 int main(int, char**) {
 	char a = 'A';
 	XTRACE(a);
@@ -62,9 +65,18 @@ int main(int, char**) {
 	n.emplace_back(new int(15));
 	XTRACE(n);
 
-	A o;
+	void* o = &b;
 	XTRACE(o);
 
-	void* p = &b;
+	A p;
 	XTRACE(p);
+
+	B<int> q;
+	XTRACE(q);
+
+	B<void> r;
+	XTRACE(r);
+
+	B<std::nullptr_t> s;
+	XTRACE(s);
 }
