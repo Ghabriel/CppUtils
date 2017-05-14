@@ -22,7 +22,8 @@ Three header files are provided:
   2. `TRACE_L(name, expression, custom_formatter)`: same as above, but using a custom formatter.
 * `BLANK`: alias to `ECHO()`. Prints a line break.
 * `DEBUG`: write this before a line of code to represent a "checkpoint". If the program breaks prematurely (e.g if a segfault occurs), the line number and the file name of the last usage of `DEBUG` is printed along with a string describing the problem. See `tests/debug_macro_test.cpp` for an example.
-* `DEBUG_EXEC`: receives an arbitrary code and executes it. Useful to execute some code only if the debug mode is active.
+* `DEBUG_REDIRECT`: redirects all the following debug output to a given output stream, which should be compatible with `decltype(std::cout)`.
+* `DEBUG_EXEC`: executes an arbitrary code. Useful to execute some code only if the debug mode is active.
 * `XTRACE`: found only in `xtrace.hpp`. Use it like `XTRACE(expression)`. Works like `TRACE(expression)`, but it can pretty-print several other types like `std::vector`, `std::tuple`, etc.
 
 ### Other features

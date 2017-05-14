@@ -3,6 +3,7 @@
 #define UTILS_DEBUG_HPP
 
 #include <csignal>
+#include <functional>
 #include <iostream>
 #include <unordered_map>
 #include <utility>
@@ -37,6 +38,17 @@ namespace detail {
         std::raise(type);
     }
 
+    using StreamType = decltype(std::cout);
+
+    struct StreamContainer {
+        static std::reference_wrapper<StreamType> stream;
+    };
+    decltype(StreamContainer::stream) StreamContainer::stream = std::cout;
+
+    inline StreamType& stream() {
+        return StreamContainer::stream.get();
+    }
+
     template<bool = DEBUG_ENABLED>
     struct DebugContainer;
 
@@ -46,7 +58,7 @@ namespace detail {
 
         template<typename T, typename... Args>
         static void echo(const T& value, Args&&... args) {
-            std::cout << value << std::endl;
+            stream() << value << '\n';
             echo(std::forward<Args>(args)...);
         }
 
@@ -55,7 +67,7 @@ namespace detail {
         template<typename T, typename... Args>
         static void echoIndented(size_t numTabs, const T& value, Args&&... args) {
             for (size_t i = 0; i < numTabs; i++) {
-                std::cout << "\t";
+                stream() << "\t";
             }
             echo(value);
             echoIndented(numTabs, std::forward<Args>(args)...);
@@ -63,20 +75,20 @@ namespace detail {
 
         template<typename T>
         static void trace(const std::string& name, const T& value) {
-            std::cout << name << " = ";
+            stream() << name << " = ";
             echo(value);
         }
 
         template<typename T, typename F>
         static void trace(const std::string& name, const T& value, const F& formatter) {
-            std::cout << name << " = " << formatter(value) << std::endl;
+            stream() << name << " = " << formatter(value) << '\n';
         }
 
         template<typename T>
         static void traceIterable(const std::string& name, const T& value) {
             unsigned long long counter = 0;
             for (auto& elem : value) {
-                std::cout << name << "[" << std::to_string(counter++) << "] = ";
+                stream() << name << "[" << std::to_string(counter++) << "] = ";
                 echo(elem);
             }
         }
@@ -90,6 +102,11 @@ namespace detail {
                 }
                 ready = true;
             }
+        }
+
+        template<typename T>
+        static void debugRedirect(T& stream) {
+            StreamContainer::stream = stream;
         }
     };
 
@@ -108,6 +125,9 @@ namespace detail {
         static void traceIterable(const std::string&, const T&) {}
 
         static void debug(size_t, const std::string&) {}
+
+        template<typename T>
+        static void debugRedirect(const T&) {}
     };
 }
 
@@ -135,6 +155,11 @@ inline void debug(size_t line, const std::string& filename) {
     detail::DebugContainer<>::debug(line, filename);
 }
 
+template<typename T>
+inline void debugRedirect(T& stream) {
+    detail::DebugContainer<>::debugRedirect(stream);
+}
+
 #define FIRST_NAME(v, ...) (#v)
 
 #define ECHO(...) echo(__VA_ARGS__)
@@ -145,6 +170,7 @@ inline void debug(size_t line, const std::string& filename) {
 #define TRACE_ITL(x) traceIterable((l), (x))
 #define BLANK ECHO("");
 #define DEBUG debug(__LINE__, __FILE__);
+#define DEBUG_REDIRECT(stream) debugRedirect(stream)
 
 #if DEBUG_ENABLED == 1
     #define DEBUG_EXEC(...) __VA_ARGS__
