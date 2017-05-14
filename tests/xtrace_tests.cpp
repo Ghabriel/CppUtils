@@ -11,6 +11,19 @@ class A {};
 template<typename T>
 class B {};
 
+template<typename T>
+class C {
+ public:
+	T* begin() const { return nullptr; }
+};
+
+template<typename T>
+class D {
+ public:
+	T* begin() const { return nullptr; }
+	T* end() const { return nullptr; }
+};
+
 int main(int, char**) {
 	char a = 'A';
 	XTRACE(a);
@@ -79,4 +92,10 @@ int main(int, char**) {
 
 	B<std::nullptr_t> s;
 	XTRACE(s);
+
+	C<int> t;
+	XTRACE(t);
+
+	D<int> u;
+	XTRACE(u);
 }

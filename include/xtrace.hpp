@@ -20,8 +20,12 @@ namespace detail {
     template<typename T>
     struct it_underlying_type {
      private:
-        template<typename C, typename V = decltype(*std::declval<C>().begin())>
-        static V test(const C&);
+        template<typename C,
+            typename Begin = decltype(*std::declval<C>().begin()),
+            typename End = decltype(*std::declval<C>().end()),
+            typename =
+                typename std::enable_if<std::is_same<Begin, End>::value>::type>
+        static Begin test(const C&);
         static void test(...);
 
      public:
@@ -114,6 +118,7 @@ namespace detail {
         std::string operator()(const T& value, priority<0>) const {
             std::stringstream ss;
             ss << "UNPRINTABLE (typeid: " << typeid(value).name() << ")";
+            // ss << typeid(typename it_underlying_type<T>::type).name();
             return ss.str();
         }
 
