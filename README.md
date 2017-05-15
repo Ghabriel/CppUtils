@@ -21,7 +21,11 @@ Three header files are provided:
   1. `TRACE_L(name, expression)`: equivalent to `TRACE(expression)`, but displays the value of `name` as if it was the name of `expression`.
   2. `TRACE_L(name, expression, custom_formatter)`: same as above, but using a custom formatter.
 * `BLANK`: alias to `ECHO()`. Prints a line break.
-* `DEBUG`: write this before a line of code to represent a "checkpoint". If the program breaks prematurely (e.g if a segfault occurs), the line number and the file name of the last usage of `DEBUG` is printed along with a string describing the problem. See `tests/debug_macro_test.cpp` for an example.
+* `DEBUG`: write this before a line of code to represent a "checkpoint". If the program breaks prematurely (e.g if a segfault occurs), the following informations are printed regarding the last successful usage of `DEBUG` (see `tests/debug_macro_test.cpp` for an example):
+  1. the line number
+  2. the file name
+  3. the function name
+  4. a string describing the problem.
 * `DEBUG_REDIRECT`: two possible usages:
   1. `DEBUG_REDIRECT(stream)`: redirects all the following debug output to a given output stream, which must be compatible with `decltype(std::cout)`.
   2. `DEBUG_REDIRECT(function)`: every debug message will be forwarded to a given function, which must be compatible with `std::function<void(const std::string&)>`.

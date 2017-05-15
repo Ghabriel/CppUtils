@@ -3,7 +3,9 @@
 
 /*
  * A basic example of the DEBUG macro. The output of this program will be:
- * Segmentation fault in tests/debug_macro_test.cpp:15
+ * Segmentation fault.
+ *   Location: tests/debug_test.cpp:15
+ *   Function: main
  */
 
 int main(int, char**) {

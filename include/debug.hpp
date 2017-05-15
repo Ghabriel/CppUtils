@@ -6,6 +6,7 @@
 #include <functional>
 #include <iostream>
 #include <sstream>
+#include <tuple>
 #include <unordered_map>
 #include <utility>
 
@@ -17,6 +18,10 @@
 #define DEBUG_ENABLED 1
 #endif
 
+#ifndef FUNCTION_NAME
+#define FUNCTION_NAME __func__
+#endif
+
 #if ALLOW_DEBUG_USAGE == 1
 
 namespace dbg {
@@ -24,7 +29,7 @@ namespace dbg {
     void echo(Args&&...);
 
     namespace detail {
-        std::pair<size_t, std::string> debugBuffer;
+        std::tuple<size_t, std::string, std::string> debugBuffer;
         const std::unordered_map<int, std::string> debugLabels = {
             {SIGABRT, "Aborted"},
             {SIGFPE, "Division by zero"},
@@ -35,11 +40,12 @@ namespace dbg {
         };
 
         inline void printer(int type) {
-            auto line = std::to_string(debugBuffer.first);
-            auto& filename = debugBuffer.second;
+            auto line = std::get<0>(debugBuffer);
+            auto& filename = std::get<1>(debugBuffer);
+            auto& functionName = std::get<2>(debugBuffer);
             std::stringstream ss;
-            ss << debugLabels.at(type) << " in " << filename
-               << ":" << line;
+            ss << debugLabels.at(type) << ".\n  Location: " << filename
+               << ":" << line << "\n  Function: " << functionName;
             echo(ss.str());
             std::signal(type, SIG_DFL);
             std::raise(type);
@@ -134,8 +140,8 @@ namespace dbg {
                 }
             }
 
-            static void debug(size_t line, const std::string& filename) {
-                debugBuffer = {line, filename};
+            static void debug(size_t line, const std::string& filename, const std::string& fn) {
+                debugBuffer = std::make_tuple(line, filename, fn);
                 static bool ready = false;
                 if (!ready) {
                     for (auto& pair : debugLabels) {
@@ -145,13 +151,13 @@ namespace dbg {
                 }
             }
 
-            static void debugRedirect(StreamType& stream) {
+            static void redirect(StreamType& stream) {
                 static auto& streamContainer = StreamContainer::instance();
                 streamContainer.redirector = defaultRedirector;
                 streamContainer.stream = stream;
             }
 
-            static void debugRedirect(const Redirector& redirector) {
+            static void redirect(const Redirector& redirector) {
                 StreamContainer::instance().redirector = redirector;
             }
         };
@@ -170,10 +176,10 @@ namespace dbg {
             template<typename T>
             static void traceIterable(const std::string&, const T&) {}
 
-            static void debug(size_t, const std::string&) {}
+            static void debug(size_t, const std::string&, const std::string&) {}
 
             template<typename T>
-            static void debugRedirect(const T&) {}
+            static void redirect(const T&) {}
         };
     }
 
@@ -197,18 +203,18 @@ namespace dbg {
         detail::DebugContainer<>::traceIterable(name, value);
     }
 
-    inline void debug(size_t line, const std::string& filename) {
-        detail::DebugContainer<>::debug(line, filename);
+    inline void debug(size_t line, const std::string& filename, const std::string& fn) {
+        detail::DebugContainer<>::debug(line, filename, fn);
     }
 
     template<typename T>
-    inline void debugRedirect(T& stream) {
-        detail::DebugContainer<>::debugRedirect(stream);
+    inline void redirect(T& stream) {
+        detail::DebugContainer<>::redirect(stream);
     }
 
     template<typename T>
-    inline void debugRedirect(const T& stream) {
-        detail::DebugContainer<>::debugRedirect(stream);
+    inline void redirect(const T& stream) {
+        detail::DebugContainer<>::redirect(stream);
     }
 }
 
@@ -221,8 +227,8 @@ namespace dbg {
 #define TRACE_IT(x) dbg::traceIterable((#x), (x))
 #define TRACE_ITL(x) dbg::traceIterable((l), (x))
 #define BLANK ECHO("");
-#define DEBUG dbg::debug(__LINE__, __FILE__);
-#define DEBUG_REDIRECT(stream) dbg::debugRedirect(stream)
+#define DEBUG dbg::debug(__LINE__, __FILE__, FUNCTION_NAME);
+#define DEBUG_REDIRECT(stream) dbg::redirect(stream)
 
 #if DEBUG_ENABLED == 1
     #define DEBUG_EXEC(...) __VA_ARGS__
