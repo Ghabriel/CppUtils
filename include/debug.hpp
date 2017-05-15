@@ -22,11 +22,32 @@
 #define FUNCTION_NAME __func__
 #endif
 
-#if ALLOW_DEBUG_USAGE == 1
+#if ALLOW_DEBUG_USAGE == 0
+#define FN_SUFFIX __attribute__ ((deprecated("debug usage")))
+#else
+#define FN_SUFFIX
+#endif
 
 namespace dbg {
     template<typename... Args>
-    void echo(Args&&...);
+    void echo(Args&&...) FN_SUFFIX;
+
+    template<typename... Args>
+    inline void echoIndented(size_t numTabs, Args&&... args) FN_SUFFIX;
+
+    template<typename... Args>
+    inline void trace(Args&&... args) FN_SUFFIX;
+
+    template<typename T>
+    inline void traceIterable(const std::string& name, const T& value) FN_SUFFIX;
+
+    inline void debug(size_t line, const std::string& filename, const std::string& fn) FN_SUFFIX;
+
+    template<typename T>
+    inline void redirect(T& stream) FN_SUFFIX;
+
+    template<typename T>
+    inline void redirect(const T& stream) FN_SUFFIX;
 
     namespace detail {
         std::tuple<size_t, std::string, std::string> debugBuffer;
@@ -40,15 +61,17 @@ namespace dbg {
         };
 
         inline void printer(int type) {
-            auto line = std::get<0>(debugBuffer);
-            auto& filename = std::get<1>(debugBuffer);
-            auto& functionName = std::get<2>(debugBuffer);
-            std::stringstream ss;
-            ss << debugLabels.at(type) << ".\n  Location: " << filename
-               << ":" << line << "\n  Function: " << functionName;
-            echo(ss.str());
-            std::signal(type, SIG_DFL);
-            std::raise(type);
+            #if ALLOW_DEBUG_USAGE == 1
+                auto& line = std::get<0>(debugBuffer);
+                auto& filename = std::get<1>(debugBuffer);
+                auto& functionName = std::get<2>(debugBuffer);
+                std::stringstream ss;
+                ss << debugLabels.at(type) << ".\n  Location: " << filename
+                   << ":" << line << "\n  Function: " << functionName;
+                echo(ss.str());
+                std::signal(type, SIG_DFL);
+                std::raise(type);
+            #endif
         }
 
         using Redirector = std::function<void(const std::string&)>;
@@ -81,11 +104,28 @@ namespace dbg {
             return StreamContainer::instance();
         }
 
-        template<bool = DEBUG_ENABLED>
-        struct DebugContainer;
+        template<bool = DEBUG_ENABLED, bool = ALLOW_DEBUG_USAGE>
+        struct DebugContainer {
+            template<typename... Args>
+            static void echo(Args&&...) {}
+
+            template<typename... Args>
+            static void echoIndented(Args&&...) {}
+
+            template<typename... Args>
+            static void trace(Args&&...) {}
+
+            template<typename T>
+            static void traceIterable(const std::string&, const T&) {}
+
+            static void debug(size_t, const std::string&, const std::string&) {}
+
+            template<typename T>
+            static void redirect(const T&) {}
+        };
 
         template<>
-        struct DebugContainer<true> {
+        struct DebugContainer<true, true> {
             static void echo() {}
 
             template<typename T, typename... Args>
@@ -161,26 +201,6 @@ namespace dbg {
                 StreamContainer::instance().redirector = redirector;
             }
         };
-
-        template<>
-        struct DebugContainer<false> {
-            template<typename... Args>
-            static void echo(Args&&...) {}
-
-            template<typename... Args>
-            static void echoIndented(Args&&...) {}
-
-            template<typename... Args>
-            static void trace(Args&&...) {}
-
-            template<typename T>
-            static void traceIterable(const std::string&, const T&) {}
-
-            static void debug(size_t, const std::string&, const std::string&) {}
-
-            template<typename T>
-            static void redirect(const T&) {}
-        };
     }
 
     template<typename... Args>
@@ -234,20 +254,6 @@ namespace dbg {
     #define DEBUG_EXEC(...) __VA_ARGS__
 #else
     #define DEBUG_EXEC(...) ;
-#endif
-
-#else
-
-#define ECHO(...) {int debug_usage;}
-#define ECHOI(numTabs,...) {int debug_usage;}
-#define TRACE(...) {int debug_usage;}
-#define TRACE_L(x,...) {int debug_usage;}
-#define TRACE_IT(x) {int debug_usage;}
-#define TRACE_ITL(x) {int debug_usage;}
-#define BLANK {int debug_usage;}
-#define DEBUG {int debug_usage;}
-#define DEBUG_EXEC(...) {int debug_usage;}
-
 #endif
 
 #endif
