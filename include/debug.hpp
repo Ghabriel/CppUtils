@@ -50,7 +50,12 @@ namespace dbg {
     inline void redirect(const T& stream) FN_SUFFIX;
 
     namespace detail {
-        std::tuple<size_t, std::string, std::string> debugBuffer;
+        using DebugBufferType = std::tuple<size_t, std::string, std::string>;
+        inline DebugBufferType& debugBuffer() {
+            static DebugBufferType buffer;
+            return buffer;
+        };
+
         const std::unordered_map<int, std::string> debugLabels = {
             {SIGABRT, "Aborted"},
             {SIGFPE, "Division by zero"},
@@ -62,9 +67,10 @@ namespace dbg {
 
         inline void printer(int type) {
             #if ALLOW_DEBUG_USAGE == 1
-                auto& line = std::get<0>(debugBuffer);
-                auto& filename = std::get<1>(debugBuffer);
-                auto& functionName = std::get<2>(debugBuffer);
+                auto& buffer = debugBuffer();
+                auto& line = std::get<0>(buffer);
+                auto& filename = std::get<1>(buffer);
+                auto& functionName = std::get<2>(buffer);
                 std::stringstream ss;
                 ss << debugLabels.at(type) << ".\n  Location: " << filename
                    << ":" << line << "\n  Function: " << functionName;
@@ -181,7 +187,7 @@ namespace dbg {
             }
 
             static void debug(size_t line, const std::string& filename, const std::string& fn) {
-                debugBuffer = std::make_tuple(line, filename, fn);
+                debugBuffer() = std::make_tuple(line, filename, fn);
                 static bool ready = false;
                 if (!ready) {
                     for (auto& pair : debugLabels) {
