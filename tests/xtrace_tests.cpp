@@ -98,4 +98,8 @@ int main(int, char**) {
 
 	D<int> u;
 	XTRACE(u);
+
+	const int* v = new int(42);
+	XTRACE(v);
+	delete v;
 }

@@ -23,7 +23,7 @@
 #endif
 
 #if ALLOW_DEBUG_USAGE == 0
-#define FN_SUFFIX __attribute__ ((deprecated("debug usage")))
+#define FN_SUFFIX __attribute__((deprecated("debug usage")))
 #else
 #define FN_SUFFIX
 #endif
@@ -174,7 +174,7 @@ namespace dbg {
 
             template<typename T, typename F>
             static void trace(const std::string& name, const T& value, const F& formatter) {
-                trace(name, formatter(value));
+                trace(name, formatter << value);
             }
 
             template<typename T>

@@ -4,7 +4,7 @@
 #include "debug.hpp"
 
 struct Custom {
-	std::string operator()(char c) const {
+	std::string operator<<(char c) const {
 		return "[char #" + std::to_string(c) + "]";
 	}
 };

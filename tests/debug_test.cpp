@@ -4,7 +4,7 @@
 /*
  * A basic example of the DEBUG macro. The output of this program will be:
  * Segmentation fault.
- *   Location: tests/debug_test.cpp:15
+ *   Location: tests/debug_test.cpp:17
  *   Function: main
  */
 
