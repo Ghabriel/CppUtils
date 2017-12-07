@@ -87,6 +87,8 @@ namespace dbg {
         template<typename T>
         std::string operator<<(const std::shared_ptr<T>&) const;
         template<typename T>
+        std::string operator<<(const std::weak_ptr<T>&) const;
+        template<typename T>
         std::string operator<<(const std::reference_wrapper<T>&) const;
         template<typename T>
         std::string operator<<(const T&) const;
@@ -130,6 +132,14 @@ namespace dbg {
         }
 
         template<typename T>
+        std::string smartPointer(T* const value) const {
+            std::stringstream ss;
+            ss << "(" << static_cast<const void*>(value)
+               << ") -> " << ((*this) << (*value));
+            return ss.str();
+        }
+
+        template<typename T>
         std::string formatContainer(const T&) const;
 
         template<typename T>
@@ -158,12 +168,21 @@ namespace dbg {
 
     template<typename T>
     inline std::string XTraceFormatter::operator<<(const std::unique_ptr<T>& value) const {
-        return (*this) << value.get();
+        return "unique" + smartPointer(value.get());
     }
 
     template<typename T>
     inline std::string XTraceFormatter::operator<<(const std::shared_ptr<T>& value) const {
-        return (*this) << value.get();
+        return "shared" + smartPointer(value.get());
+    }
+
+    template<typename T>
+    inline std::string XTraceFormatter::operator<<(const std::weak_ptr<T>& value) const {
+        if (auto shared = value.lock()) {
+            return "weak" + smartPointer(shared.get());
+        }
+
+        return "weak(invalid)";
     }
 
     template<typename T>
@@ -176,7 +195,7 @@ namespace dbg {
     }
 
     inline std::string XTraceFormatter::operator<<(char value) const {
-        return std::string(1, value);
+        return "'" + std::string(1, value) + "'";
     }
 
     inline std::string XTraceFormatter::operator<<(const char* value) const {

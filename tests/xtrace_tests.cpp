@@ -24,6 +24,12 @@ class D {
 	T* end() const { return nullptr; }
 };
 
+class E {};
+
+std::string operator<<(dbg::XTraceFormatter, const E&) {
+	return "[instance of E]";
+}
+
 int main(int, char**) {
 	char a = 'A';
 	XTRACE(a);
@@ -102,4 +108,15 @@ int main(int, char**) {
 	const int* v = new int(42);
 	XTRACE(v);
 	delete v;
+
+	E w;
+	XTRACE(w);
+
+	std::weak_ptr<int> x;
+	{
+		auto temp = std::make_shared<int>(42);
+		x = temp;
+		XTRACE(x);
+	}
+	XTRACE(x);
 }
