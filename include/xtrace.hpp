@@ -102,7 +102,8 @@ namespace dbg {
         }
         std::string operator<<(const std::vector<bool>& c) const {
             return formatContainer(c);
-        }        template<typename K, typename V>
+        }
+        template<typename K, typename V>
         std::string operator<<(const std::map<K,V>& c) const {
             return formatContainer(c);
         }
