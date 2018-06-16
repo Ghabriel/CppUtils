@@ -100,7 +100,9 @@ namespace dbg {
         std::string operator<<(const std::array<T,N>& c) const {
             return formatContainer(c);
         }
-        template<typename K, typename V>
+        std::string operator<<(const std::vector<bool>& c) const {
+            return formatContainer(c);
+        }        template<typename K, typename V>
         std::string operator<<(const std::map<K,V>& c) const {
             return formatContainer(c);
         }
@@ -230,7 +232,7 @@ namespace dbg {
         std::stringstream ss;
         ss << '{';
         bool first = true;
-        for (auto& value : container) {
+        for (const auto& value : container) {
             if (!first) {
                 ss << ", ";
             }

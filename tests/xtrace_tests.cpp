@@ -47,6 +47,9 @@ int main(int, char**) {
 	std::vector<int> e = {42, 30, 7};
 	XTRACE(e);
 
+	std::vector<bool> e2 = {false, true, false};
+	XTRACE(e2);
+
 	std::pair<int, std::string> f = {42, "Hello, world!"};
 	XTRACE(f);
 
