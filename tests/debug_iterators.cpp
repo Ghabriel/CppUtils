@@ -82,6 +82,27 @@ void test_filter_map() {
     assert(vec == expected_vec);
 }
 
+void test_enumerate() {
+    auto iterA = get_test_iterator();
+
+    using ValueType = std::vector<std::pair<size_t, std::string>>;
+
+    auto vec = iterA
+        .step_by(2)
+        .filter([](auto value) { return value <= 5; })
+        .map([](auto value) { return std::string(value, 'a'); })
+        .enumerate()
+        .collect<ValueType>();
+
+    ValueType expected_vec = {
+        std::make_pair(0, "a"),
+        std::make_pair(1, "aaa"),
+        std::make_pair(2, "aaaaa"),
+    };
+
+    assert(vec == expected_vec);
+}
+
 
 void test_collect() {
     auto iterA = get_test_iterator();
@@ -99,5 +120,6 @@ int main(int, char**) {
     test_step_by();
     test_filter();
     test_filter_map();
+    test_enumerate();
     test_collect();
 }

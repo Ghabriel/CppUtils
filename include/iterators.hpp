@@ -147,6 +147,29 @@ namespace iter {
     };
 
     template<typename T>
+    class EnumerateIterator : public Iterator<std::pair<size_t, T>> {
+        using TargetType = std::pair<size_t, T>;
+      public:
+        EnumerateIterator(Iterator<T>& source) : source(source) { }
+
+        virtual std::optional<TargetType> next() override {
+            std::optional<T> next_value = source.next();
+
+            if (!next_value.has_value()) {
+                return std::optional<TargetType>();
+            }
+
+            return std::optional<TargetType>(
+                std::make_pair(next_index++, *next_value)
+            );
+        }
+
+      private:
+        Iterator<T>& source;
+        size_t next_index = 0;
+    };
+
+    template<typename T>
     class RangeIterator {
       public:
         RangeIterator(Iterator<T>& source) : source(source), cached_next(source.next()) { }
@@ -243,6 +266,10 @@ class Iterator {
     template<typename F>
     iter::FilterMapIterator<T, F> filter_map(F fn) {
         return iter::FilterMapIterator(*this, fn);
+    }
+
+    iter::EnumerateIterator<T> enumerate() {
+        return iter::EnumerateIterator(*this);
     }
 
     template<typename Result, typename F>
