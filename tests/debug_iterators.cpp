@@ -1,4 +1,5 @@
 #include <cassert>
+#include <deque>
 #include <iostream>
 #include <optional>
 #include <type_traits>
@@ -48,9 +49,36 @@ void test_step_by() {
     assert(iterA.step_by(2).nth(1) == 3);
 }
 
+
+void test_filter() {
+    auto filter_predicate = [](auto value) { return value > 3 && value < 8; };
+
+    auto iterA = get_test_iterator();
+    assert(iterA.filter(filter_predicate).count() == 4);
+
+    iterA = get_test_iterator();
+    auto vec = iterA
+        .step_by(3)
+        .filter(filter_predicate)
+        .collect<std::vector<int>>();
+    std::vector<int> expected_vec = {4, 7};
+    assert(vec == expected_vec);
+}
+
+void test_collect() {
+    auto iterA = get_test_iterator();
+
+    auto as_deque = iterA.collect<std::deque<int>>();
+    std::deque<int> expected_deque = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+
+    assert(as_deque == expected_deque);
+}
+
 int main(int, char**) {
     test_count();
     test_last();
     test_nth();
     test_step_by();
+    test_filter();
+    test_collect();
 }

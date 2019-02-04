@@ -95,6 +95,30 @@ namespace iter {
         F fn;
     };
 
+    template<typename T, typename P>
+    class FilterIterator : public Iterator<T> {
+      public:
+        FilterIterator(Iterator<T>& source, P predicate) : source(source), predicate(predicate) { }
+
+        virtual std::optional<T> next() override {
+            while (true) {
+                std::optional<T> next_value = source.next();
+
+                if (!next_value.has_value()) {
+                    return std::optional<T>();
+                }
+
+                if (predicate(*next_value)) {
+                    return std::optional<T>(*next_value);
+                }
+            }
+        }
+
+      private:
+        Iterator<T>& source;
+        P predicate;
+    };
+
     template<typename T>
     class RangeIterator {
       public:
@@ -184,6 +208,11 @@ class Iterator {
         }
     }
 
+    template<typename P>
+    iter::FilterIterator<T, P> filter(P predicate) {
+        return iter::FilterIterator(*this, predicate);
+    }
+
     template<typename Result, typename F>
     Result fold(Result init, F fn) {
         for_each([&init, fn](T value) {
@@ -195,6 +224,19 @@ class Iterator {
 
     T sum() {
         return fold(0, [](auto acc, auto value) { return acc + value; });
+    }
+
+    template<typename Container>
+    Container collect() {
+        Container container;
+        auto back_inserter = std::back_inserter(container);
+
+        for (auto value : *this) {
+            *back_inserter = value;
+            ++back_inserter;
+        }
+
+        return container;
     }
 
     iter::RangeIterator<T> begin() {
