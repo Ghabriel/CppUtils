@@ -65,6 +65,24 @@ void test_filter() {
     assert(vec == expected_vec);
 }
 
+void test_filter_map() {
+    auto iterA = get_test_iterator();
+
+    auto vec = iterA
+        .filter_map([](auto value) {
+            if (value > 2 && value < 5) {
+                return std::optional<std::string>(std::string(value, 'a'));
+            }
+
+            return std::optional<std::string>();
+        })
+        .collect<std::vector<std::string>>();
+
+    std::vector<std::string> expected_vec = {"aaa", "aaaa"};
+    assert(vec == expected_vec);
+}
+
+
 void test_collect() {
     auto iterA = get_test_iterator();
 
@@ -80,5 +98,6 @@ int main(int, char**) {
     test_nth();
     test_step_by();
     test_filter();
+    test_filter_map();
     test_collect();
 }

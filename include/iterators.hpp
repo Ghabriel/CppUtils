@@ -119,6 +119,33 @@ namespace iter {
         P predicate;
     };
 
+    template<typename T, typename F>
+    class FilterMapIterator : public Iterator<typename std::invoke_result_t<F, T>::value_type> {
+        using TargetType = typename std::invoke_result_t<F, T>::value_type;
+      public:
+        FilterMapIterator(Iterator<T>& source, F fn) : source(source), fn(fn) { }
+
+        virtual std::optional<TargetType> next() override {
+            while (true) {
+                std::optional<T> next_value = source.next();
+
+                if (!next_value.has_value()) {
+                    return std::optional<TargetType>();
+                }
+
+                std::optional<TargetType> result = fn(*next_value);
+
+                if (result.has_value()) {
+                    return *result;
+                }
+            }
+        }
+
+      private:
+        Iterator<T>& source;
+        F fn;
+    };
+
     template<typename T>
     class RangeIterator {
       public:
@@ -211,6 +238,11 @@ class Iterator {
     template<typename P>
     iter::FilterIterator<T, P> filter(P predicate) {
         return iter::FilterIterator(*this, predicate);
+    }
+
+    template<typename F>
+    iter::FilterMapIterator<T, F> filter_map(F fn) {
+        return iter::FilterMapIterator(*this, fn);
     }
 
     template<typename Result, typename F>
