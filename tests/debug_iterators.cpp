@@ -103,6 +103,18 @@ void test_enumerate() {
     assert(vec == expected_vec);
 }
 
+void test_peekable() {
+    auto iterA = get_test_iterator();
+    auto peekable = iterA.peekable();
+
+    assert(*peekable.peek() == 1);
+    assert(*peekable.next() == 1);
+    assert(*peekable.next() == 2);
+    assert(*peekable.peek() == 3);
+    assert(*peekable.peek() == 3);
+    assert(*peekable.next() == 3);
+}
+
 
 void test_collect() {
     auto iterA = get_test_iterator();

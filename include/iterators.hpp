@@ -170,6 +170,41 @@ namespace iter {
     };
 
     template<typename T>
+    class PeekableIterator : public Iterator<T> {
+      public:
+        PeekableIterator(Iterator<T>& source) : source(source) { }
+
+        virtual std::optional<T> next() override {
+            std::optional<T> next_value;
+
+            if (next_is_cached) {
+                next_value = std::move(cached_next);
+            } else {
+                next_value = source.next();
+            }
+
+            cached_next = source.next();
+            next_is_cached = true;
+
+            return next_value;
+        }
+
+        std::optional<T> peek() {
+            if (!next_is_cached) {
+                cached_next = source.next();
+                next_is_cached = true;
+            }
+
+            return cached_next;
+        }
+
+      private:
+        Iterator<T>& source;
+        std::optional<T> cached_next;
+        bool next_is_cached = false;
+    };
+
+    template<typename T>
     class RangeIterator {
       public:
         RangeIterator(Iterator<T>& source) : source(source), cached_next(source.next()) { }
@@ -270,6 +305,10 @@ class Iterator {
 
     iter::EnumerateIterator<T> enumerate() {
         return iter::EnumerateIterator(*this);
+    }
+
+    iter::PeekableIterator<T> peekable() {
+        return iter::PeekableIterator(*this);
     }
 
     template<typename Result, typename F>
