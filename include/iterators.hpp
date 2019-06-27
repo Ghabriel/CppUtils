@@ -3,102 +3,114 @@
 #include <type_traits>
 #include <vector>
 
-template<typename T>
+template<typename T, typename CRTP>
 class Iterator;
 
 namespace iter {
-    template<typename T>
-    class StepIterator : public Iterator<T> {
+    namespace detail {
+        template<typename TIter>
+        using ValueType = typename TIter::ValueType;
+    }
+
+    // template<typename T>
+    // class StepIterator : public Iterator<T> {
+    //   public:
+    //     StepIterator(Iterator<T>& source, size_t step) : source(source), step(step) { }
+
+    //     virtual std::optional<T> next() override {
+    //         if (!generated_first) {
+    //             generated_first = true;
+    //             return source.next();
+    //         }
+
+    //         return source.nth(step - 1);
+    //     }
+
+    //   private:
+    //     Iterator<T>& source;
+    //     size_t step;
+    //     bool generated_first = false;
+    // };
+
+    // template<typename T>
+    // class ChainIterator : public Iterator<T> {
+    //   public:
+    //     ChainIterator(Iterator<T>& first, Iterator<T>& second) : first(first), second(second) { }
+
+    //     virtual std::optional<T> next() override {
+    //         std::optional<T> next = first.next();
+
+    //         if (next.has_value()) {
+    //             return next;
+    //         }
+
+    //         return second.next();
+    //     }
+
+    //   private:
+    //     Iterator<T>& first;
+    //     Iterator<T>& second;
+    // };
+
+    // template<typename T, typename U>
+    // class ZipIterator : public Iterator<std::pair<T, U>> {
+    //     using TargetType = std::pair<T, U>;
+    //   public:
+    //     ZipIterator(Iterator<T>& first, Iterator<U>& second) : first(first), second(second) { }
+
+    //     virtual std::optional<TargetType> next() override {
+    //         std::optional<T> first_next = first.next();
+
+    //         if (!first_next.has_value()) {
+    //             return std::optional<TargetType>();
+    //         }
+
+    //         std::optional<T> second_next = second.next();
+
+    //         if (!second_next.has_value()) {
+    //             return std::optional<TargetType>();
+    //         }
+
+    //         return std::optional<TargetType>(std::make_pair(*first_next, *second_next));
+    //     }
+
+    //   private:
+    //     Iterator<T>& first;
+    //     Iterator<U>& second;
+    // };
+
+    // template<typename T, typename F>
+    // class MapIterator : public Iterator<std::invoke_result_t<F, T>> {
+    //     using TargetType = std::invoke_result_t<F, T>;
+    //   public:
+    //     MapIterator(Iterator<T>& source, F fn) : source(source), fn(fn) { }
+
+    //     virtual std::optional<TargetType> next() override {
+    //         std::optional<T> next_value = source.next();
+
+    //         if (!next_value.has_value()) {
+    //             return std::optional<TargetType>();
+    //         }
+
+    //         return std::optional<TargetType>(fn(*next_value));
+    //     }
+
+    //   private:
+    //     Iterator<T>& source;
+    //     F fn;
+    // };
+
+    template<typename P, typename TIter>
+    class FilterIterator : public Iterator<detail::ValueType<TIter>, FilterIterator<P, TIter>> {
+        using T = detail::ValueType<TIter>;
       public:
-        StepIterator(Iterator<T>& source, size_t step) : source(source), step(step) { }
-
-        virtual std::optional<T> next() override {
-            if (!generated_first) {
-                generated_first = true;
-                return source.next();
-            }
-
-            return source.nth(step - 1);
+        FilterIterator(TIter& source, P predicate) : source(std::move(source)), predicate(predicate) { }
+        FilterIterator(const FilterIterator& rhs) : source(rhs.source), predicate(rhs.predicate) {
+            std::cout << "COPY\n";
         }
-
-      private:
-        Iterator<T>& source;
-        size_t step;
-        bool generated_first = false;
-    };
-
-    template<typename T> 
-    class ChainIterator : public Iterator<T> {
-      public:
-        ChainIterator(Iterator<T>& first, Iterator<T>& second) : first(first), second(second) { }
-
-        virtual std::optional<T> next() override {
-            std::optional<T> next = first.next();
-
-            if (next.has_value()) {
-                return next;
-            }
-
-            return second.next();
+        FilterIterator(FilterIterator&& rhs) : source(std::move(rhs.source)), predicate(std::move(rhs.predicate)) {
+            std::cout << "MOVE\n";
         }
-
-      private:
-        Iterator<T>& first;
-        Iterator<T>& second;
-    };
-
-    template<typename T, typename U>
-    class ZipIterator : public Iterator<std::pair<T, U>> {
-        using TargetType = std::pair<T, U>;
-      public:
-        ZipIterator(Iterator<T>& first, Iterator<U>& second) : first(first), second(second) { }
-
-        virtual std::optional<TargetType> next() override {
-            std::optional<T> first_next = first.next();
-
-            if (!first_next.has_value()) {
-                return std::optional<TargetType>();
-            }
-
-            std::optional<T> second_next = second.next();
-
-            if (!second_next.has_value()) {
-                return std::optional<TargetType>();
-            }
-
-            return std::optional<TargetType>(std::make_pair(*first_next, *second_next));
-        }
-
-      private:
-        Iterator<T>& first;
-        Iterator<U>& second;
-    };
-
-    template<typename T, typename F>
-    class MapIterator : public Iterator<std::invoke_result_t<F, T>> {
-        using TargetType = std::invoke_result_t<F, T>;
-      public:
-        MapIterator(Iterator<T>& source, F fn) : source(source), fn(fn) { }
-
-        virtual std::optional<TargetType> next() override {
-            std::optional<T> next_value = source.next();
-
-            if (!next_value.has_value()) {
-                return std::optional<TargetType>();
-            }
-
-            return std::optional<TargetType>(fn(*next_value));
-        }
-
-      private:
-        Iterator<T>& source;
-        F fn;
-    };
-
-    template<typename T, typename P>
-    class FilterIterator : public Iterator<T> {
-      public:
-        FilterIterator(Iterator<T>& source, P predicate) : source(source), predicate(predicate) { }
 
         virtual std::optional<T> next() override {
             while (true) {
@@ -115,173 +127,176 @@ namespace iter {
         }
 
       private:
-        Iterator<T>& source;
+        TIter source;
         P predicate;
     };
 
-    template<typename T, typename F>
-    class FilterMapIterator : public Iterator<typename std::invoke_result_t<F, T>::value_type> {
-        using TargetType = typename std::invoke_result_t<F, T>::value_type;
-      public:
-        FilterMapIterator(Iterator<T>& source, F fn) : source(source), fn(fn) { }
+    // template<typename T, typename F>
+    // class FilterMapIterator : public Iterator<typename std::invoke_result_t<F, T>::value_type> {
+    //     using TargetType = typename std::invoke_result_t<F, T>::value_type;
+    //   public:
+    //     FilterMapIterator(Iterator<T>& source, F fn) : source(source), fn(fn) { }
 
-        virtual std::optional<TargetType> next() override {
-            while (true) {
-                std::optional<T> next_value = source.next();
+    //     virtual std::optional<TargetType> next() override {
+    //         while (true) {
+    //             std::optional<T> next_value = source.next();
 
-                if (!next_value.has_value()) {
-                    return std::optional<TargetType>();
-                }
+    //             if (!next_value.has_value()) {
+    //                 return std::optional<TargetType>();
+    //             }
 
-                std::optional<TargetType> result = fn(*next_value);
+    //             std::optional<TargetType> result = fn(*next_value);
 
-                if (result.has_value()) {
-                    return *result;
-                }
-            }
-        }
+    //             if (result.has_value()) {
+    //                 return *result;
+    //             }
+    //         }
+    //     }
 
-      private:
-        Iterator<T>& source;
-        F fn;
-    };
+    //   private:
+    //     Iterator<T>& source;
+    //     F fn;
+    // };
 
-    template<typename T>
-    class EnumerateIterator : public Iterator<std::pair<size_t, T>> {
-        using TargetType = std::pair<size_t, T>;
-      public:
-        EnumerateIterator(Iterator<T>& source) : source(source) { }
+    // template<typename T>
+    // class EnumerateIterator : public Iterator<std::pair<size_t, T>> {
+    //     using TargetType = std::pair<size_t, T>;
+    //   public:
+    //     EnumerateIterator(Iterator<T>& source) : source(source) { }
 
-        virtual std::optional<TargetType> next() override {
-            std::optional<T> next_value = source.next();
+    //     virtual std::optional<TargetType> next() override {
+    //         std::optional<T> next_value = source.next();
 
-            if (!next_value.has_value()) {
-                return std::optional<TargetType>();
-            }
+    //         if (!next_value.has_value()) {
+    //             return std::optional<TargetType>();
+    //         }
 
-            return std::optional<TargetType>(
-                std::make_pair(next_index++, *next_value)
-            );
-        }
+    //         return std::optional<TargetType>(
+    //             std::make_pair(next_index++, *next_value)
+    //         );
+    //     }
 
-      private:
-        Iterator<T>& source;
-        size_t next_index = 0;
-    };
+    //   private:
+    //     Iterator<T>& source;
+    //     size_t next_index = 0;
+    // };
 
-    template<typename T>
-    class PeekableIterator : public Iterator<T> {
-      public:
-        PeekableIterator(Iterator<T>& source) : source(source) { }
+    // template<typename T>
+    // class PeekableIterator : public Iterator<T> {
+    //   public:
+    //     PeekableIterator(Iterator<T>& source) : source(source) { }
 
-        virtual std::optional<T> next() override {
-            std::optional<T> next_value;
+    //     virtual std::optional<T> next() override {
+    //         std::optional<T> next_value;
 
-            if (next_is_cached) {
-                next_value = std::move(cached_next);
-            } else {
-                next_value = source.next();
-            }
+    //         if (next_is_cached) {
+    //             next_value = std::move(cached_next);
+    //         } else {
+    //             next_value = source.next();
+    //         }
 
-            cached_next = source.next();
-            next_is_cached = true;
+    //         cached_next = source.next();
+    //         next_is_cached = true;
 
-            return next_value;
-        }
+    //         return next_value;
+    //     }
 
-        std::optional<T> peek() {
-            if (!next_is_cached) {
-                cached_next = source.next();
-                next_is_cached = true;
-            }
+    //     std::optional<T> peek() {
+    //         if (!next_is_cached) {
+    //             cached_next = source.next();
+    //             next_is_cached = true;
+    //         }
 
-            return cached_next;
-        }
+    //         return cached_next;
+    //     }
 
-      private:
-        Iterator<T>& source;
-        std::optional<T> cached_next;
-        bool next_is_cached = false;
-    };
+    //   private:
+    //     Iterator<T>& source;
+    //     std::optional<T> cached_next;
+    //     bool next_is_cached = false;
+    // };
 
-    template<typename T>
-    class RangeIterator {
-      public:
-        RangeIterator(Iterator<T>& source) : source(source), cached_next(source.next()) { }
+    // template<typename T>
+    // class RangeIterator {
+    //   public:
+    //     RangeIterator(Iterator<T>& source) : source(source), cached_next(source.next()) { }
 
-        RangeIterator& operator++() {
-            return *this;
-        }
+    //     RangeIterator& operator++() {
+    //         return *this;
+    //     }
 
-        T operator*() {
-            auto next = std::move(cached_next);
-            cached_next = source.next();
-            return *next;
-        }
+    //     T operator*() {
+    //         auto next = std::move(cached_next);
+    //         cached_next = source.next();
+    //         return *next;
+    //     }
 
-        bool operator==(const std::optional<T>& end) {
-            // return !cached_next.has_value() && !end.has_value();
-            return !cached_next.has_value();
-        }
+    //     bool operator==(const std::optional<T>& end) {
+    //         // return !cached_next.has_value() && !end.has_value();
+    //         return !cached_next.has_value();
+    //     }
 
-        bool operator!=(const std::optional<T>& end) {
-            return !(*this == end);
-        }
+    //     bool operator!=(const std::optional<T>& end) {
+    //         return !(*this == end);
+    //     }
 
-      private:
-        Iterator<T>& source;
-        std::optional<T> cached_next;
-    };
+    //   private:
+    //     Iterator<T>& source;
+    //     std::optional<T> cached_next;
+    // };
 }
 
-template<typename T>
+template<typename T, typename CRTP>
 class Iterator {
  public:
+    using ValueType = T;
+
+    virtual ~Iterator() = default;
     virtual std::optional<T> next() = 0;
 
     size_t count() {
         return fold(0, [](auto acc, auto) { return acc + 1; });
     }
 
-    std::optional<T> last() {
-        std::optional<T> last_value;
-        std::optional<T> next_value = next();
+    // std::optional<T> last() {
+    //     std::optional<T> last_value;
+    //     std::optional<T> next_value = next();
 
-        while (next_value.has_value()) {
-            last_value = std::move(next_value);
-            next_value = next();
-        }
+    //     while (next_value.has_value()) {
+    //         last_value = std::move(next_value);
+    //         next_value = next();
+    //     }
 
-        return last_value;
-    }
+    //     return last_value;
+    // }
 
-    std::optional<T> nth(size_t n) {
-        std::optional<T> next_value = next();
+    // std::optional<T> nth(size_t n) {
+    //     std::optional<T> next_value = next();
 
-        for (size_t i = 0; i < n; i++) {
-            next_value = next();
-        }
+    //     for (size_t i = 0; i < n; i++) {
+    //         next_value = next();
+    //     }
 
-        return next_value;
-    }
+    //     return next_value;
+    // }
 
-    iter::StepIterator<T> step_by(size_t step) {
-        return iter::StepIterator(*this, step);
-    }
+    // iter::StepIterator<T> step_by(size_t step) {
+    //     return iter::StepIterator(*this, step);
+    // }
 
-    iter::ChainIterator<T> chain(Iterator<T>& other) {
-        return iter::ChainIterator(*this, other);
-    }
+    // iter::ChainIterator<T> chain(Iterator<T>& other) {
+    //     return iter::ChainIterator(*this, other);
+    // }
 
-    template<typename U>
-    iter::ZipIterator<T, U> zip(Iterator<U>& other) {
-        return iter::ZipIterator(*this, other);
-    }
+    // template<typename U>
+    // iter::ZipIterator<T, U> zip(Iterator<U>& other) {
+    //     return iter::ZipIterator(*this, other);
+    // }
 
-    template<typename F>
-    iter::MapIterator<T, F> map(F fn) {
-        return iter::MapIterator(*this, fn);
-    }
+    // template<typename F>
+    // iter::MapIterator<T, F> map(F fn) {
+    //     return iter::MapIterator(*this, fn);
+    // }
 
     template<typename F>
     void for_each(F fn) {
@@ -294,22 +309,22 @@ class Iterator {
     }
 
     template<typename P>
-    iter::FilterIterator<T, P> filter(P predicate) {
-        return iter::FilterIterator(*this, predicate);
+    auto filter(P predicate) {
+        return iter::FilterIterator(static_cast<CRTP&>(*this), predicate);
     }
 
-    template<typename F>
-    iter::FilterMapIterator<T, F> filter_map(F fn) {
-        return iter::FilterMapIterator(*this, fn);
-    }
+    // template<typename F>
+    // iter::FilterMapIterator<T, F> filter_map(F fn) {
+    //     return iter::FilterMapIterator(*this, fn);
+    // }
 
-    iter::EnumerateIterator<T> enumerate() {
-        return iter::EnumerateIterator(*this);
-    }
+    // iter::EnumerateIterator<T> enumerate() {
+    //     return iter::EnumerateIterator(*this);
+    // }
 
-    iter::PeekableIterator<T> peekable() {
-        return iter::PeekableIterator(*this);
-    }
+    // iter::PeekableIterator<T> peekable() {
+    //     return iter::PeekableIterator(*this);
+    // }
 
     template<typename Result, typename F>
     Result fold(Result init, F fn) {
@@ -320,36 +335,43 @@ class Iterator {
         return init;
     }
 
-    T sum() {
-        return fold(0, [](auto acc, auto value) { return acc + value; });
-    }
+    // T sum() {
+    //     return fold(0, [](auto acc, auto value) { return acc + value; });
+    // }
 
-    template<typename Container>
-    Container collect() {
-        Container container;
-        auto back_inserter = std::back_inserter(container);
+    // template<typename Container>
+    // Container collect() {
+    //     Container container;
+    //     auto back_inserter = std::back_inserter(container);
 
-        for (auto value : *this) {
-            *back_inserter = value;
-            ++back_inserter;
-        }
+    //     for (auto value : *this) {
+    //         *back_inserter = value;
+    //         ++back_inserter;
+    //     }
 
-        return container;
-    }
+    //     return container;
+    // }
 
-    iter::RangeIterator<T> begin() {
-        return iter::RangeIterator(*this);
-    }
+    // iter::RangeIterator<T> begin() {
+    //     return iter::RangeIterator(*this);
+    // }
 
-    std::optional<T> end() {
-        return std::optional<T>();
-    }
+    // std::optional<T> end() {
+    //     return std::optional<T>();
+    // }
 };
 
 template<typename T>
-class VectorIterator : public Iterator<T> {
+class VectorIterator : public Iterator<T, VectorIterator<T>> {
  public:
     VectorIterator(const std::vector<T>& vector) : vector(vector) { }
+    VectorIterator(const VectorIterator& rhs) : vector(rhs.vector), next_index(rhs.next_index) {
+        std::cout << "COPY\n";
+    }
+    VectorIterator(VectorIterator&& rhs) : vector(std::move(rhs.vector)), next_index(std::move(rhs.next_index)) {
+        std::cout << "MOVE\n";
+    }
+
 
     virtual std::optional<T> next() override {
         if (next_index >= vector.size()) {
