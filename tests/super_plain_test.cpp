@@ -1,7 +1,6 @@
 #include <chrono>
 #include <iostream>
 #include <vector>
-#include "crtp_iterators.hpp"
 
 class Clock {
     using TClock = std::chrono::high_resolution_clock;
@@ -24,7 +23,7 @@ class Clock {
     TClock::time_point startTime;
 };
 
-VectorIterator<int> get_test_iterator() {
+std::vector<int> get_test_iterator() {
     std::vector<int> vec;
     vec.reserve(1e8);
 
@@ -32,24 +31,23 @@ VectorIterator<int> get_test_iterator() {
         vec.push_back(i);
     }
 
-    return VectorIterator(vec);
+    return vec;
 }
 
 int main(int, char**) {
-    int modulus;
-    std::cin >> modulus;
-
     Clock clock;
     clock.start();
 
     auto testIterator = get_test_iterator();
     std::cout << "VectorIterator creation: " << clock.measure() << "ms\n";
 
-    auto count = testIterator
-        .filter([modulus](auto value) { return value % modulus == 0; })
-        // .filter([](auto value) { return value % 2 == 0; })
-        // .filter([](auto value) { return value % 3 == 0; })
-        .count();
+    size_t count = 0;
+    for (int v : testIterator) {
+        if (v % 3 == 0) {
+            count++;
+        }
+    }
+
     std::cout << "count: " << clock.measure() << "ms\n";
 
     std::cout << count << std::endl;

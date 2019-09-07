@@ -77,7 +77,8 @@ class Iterator {
 template<typename T>
 class VectorIterator : public Iterator<T, VectorIterator<T>> {
  public:
-    VectorIterator(const std::vector<T>& vector) : vector(vector) { }
+    // VectorIterator(const std::vector<T>& vector) : vector(vector) { }
+    VectorIterator(std::vector<T>& vector) : vector(std::move(vector)) { }
 
     virtual std::optional<T> next() final override {
         if (next_index >= vector.size()) {
